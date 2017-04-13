@@ -288,7 +288,7 @@ class RealGas(Air):
 
         Outputs:
         --------
-            + cp_air: Specific heat at constant pressure [J/kg/K]
+            + gamma_air: Heat capacity ratio [non-dimensional]
         """
         return self.gamma_air_functions[self.gamma_option](temp)
 
@@ -450,7 +450,7 @@ class RealGas(Air):
             return gamma_air_fixed[0]
         gamma_air = gamma_air_function(kelvin2rankine(temp))
 
-        return gamma_air
+        return float(gamma_air)
 
     def heat_capacity_ratio_std(self, temp):
         """
