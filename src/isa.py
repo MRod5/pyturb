@@ -76,7 +76,8 @@ def pres_isa(h):
 
         # Get constants:
         g = units.grav
-        air_constant = air_model.R_air
+        am = air_model.Air()
+        air_constant = am.R_air
 
         # Calculate pressure:
         press_isa = press_base*((1-temp_rate/temp_base*h)**(g/air_constant/temp_rate))
@@ -109,7 +110,8 @@ def height_isa(p0):
 
     # Get constants:
     g = units.grav
-    air_constant = air_model.R_air
+    am = air_model.Air()
+    air_constant = am.R_air
 
     h0 = temp_base/temp_rate*(1 - ((p0/press_base)**(air_constant*temp_rate/g)))
 
