@@ -215,7 +215,7 @@ class RealGas(Air):
 
         # Check selected options:
         # gamma_air:
-        if type(gamma_option) is str:
+        if type(gamma_option) == str:
             if gamma_option.lower() in self.gamma_air_functions.keys():
                 # Selected option for calculating heat capacity ratio:
                 self.gamma_option = gamma_option
@@ -227,7 +227,7 @@ class RealGas(Air):
             self.gamma_option = 'standard'
 
         # cp_air:
-        if type(cp_option) is str:
+        if type(cp_option) == str:
             if cp_option.lower() in self.cp_air_functions.keys():
                 # Selected option for calculating cp, cv:
                 self.cp_option = cp_option

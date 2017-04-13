@@ -56,10 +56,10 @@ class IsentropicGas:
             selected_gamma_air_model: 'ideal' or any real model defined at air_model.RealGas
          
         """
-        if type(selected_cp_air_model) is str:
-            if selected_cp_air_model.lower() is 'ideal':
+        if type(selected_cp_air_model) == str:
+            if selected_cp_air_model.lower() == 'ideal':
                 self.selected_cp_air_model = 'ideal'
-                if selected_gamma_air_model is not 'ideal':
+                if selected_gamma_air_model != 'ideal':
                     print('Gamma_air model switched to ideal')
                 self.selected_cp_air_model = 'ideal'
 
