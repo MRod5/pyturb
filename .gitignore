@@ -1,2 +1,7 @@
 .idea
 .spyder*
+__pycache__
+pyTurb.egg-info
+.ipynb_checkpoints
+build
+dist
