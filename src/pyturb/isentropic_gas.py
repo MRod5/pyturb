@@ -19,7 +19,7 @@ MRodriguez
 """
 
 import numpy as np
-from air_model import RealGas, IdealGas
+from pyturb.air_model import RealGas, IdealGas
 
 
 class IsentropicGas:

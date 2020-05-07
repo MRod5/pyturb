@@ -6,7 +6,7 @@ M Rodriguez
 """
 
 
-from air_model import RealGas, IdealGas
+from pyturb.air_model import RealGas, IdealGas
 
 
 ig = IdealGas()

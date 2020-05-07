@@ -6,7 +6,7 @@ M Rodriguez
 """
 
 import numpy as np
-import units
+import pyturb.units as units
 
 np.testing.assert_almost_equal(units.celsius2kelvin(15), 288.15)
 np.testing.assert_almost_equal(units.kelvin2celsius(288.15), 15)

@@ -5,7 +5,7 @@ isa.py tests
 M Rodriguez
 """
 
-from isentropic_gas import IsentropicGas
+from pyturb.isentropic_gas import IsentropicGas
 import numpy as np
 
 isentropic = IsentropicGas(selected_cp_air_model='ideal', selected_gamma_air_model='aaa')

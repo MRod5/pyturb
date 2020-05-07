@@ -46,7 +46,7 @@ MRodriguez
 
 import numpy as np
 from abc import abstractmethod
-from units import kelvin2rankine, rankine2kelvin, ft2m
+from pyturb.units import kelvin2rankine, rankine2kelvin, ft2m
 from scipy.interpolate import interp1d
 
 

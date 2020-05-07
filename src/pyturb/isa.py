@@ -19,8 +19,8 @@ April 2017
 MRodriguez
 """
 
-import air_model
-import units
+import pyturb.air_model as air_model
+import pyturb.units as units
 
 
 def temp_isa(h, isa_dev=0):
