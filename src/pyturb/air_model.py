@@ -188,7 +188,7 @@ class RealGas(Air):
     RealGas(cp_option, gamma_option):
     ---------------------------------
         + cp_option: 'low-pressure', 'nasa' or 'naca'. Cp function selector. Default is 'nasa'
-        + gamma_option: 'nasa' or 'standard'. Gamma_air function selector. Default is 'standard'
+        + gamma_option: 'naca' or 'standard'. Gamma_air function selector. Default is 'standard'
     
     
     Contents:
