@@ -67,9 +67,20 @@ Pa2mmHg = Pa2Torr   # Torr = mmHg
 
 
 # Energy:
+kWh2J = 3.6e6       # kilowatt-hour to Joules
+J2kWh = 1/kWh2J     # Joules to kilowatt-hour
+cal2J = kWh2J/860*1e-3 # Calories (international steam table) to joules
+J2cal = 1/cal2J     # Joules to calories (international steam table)
+Btu2J =  1055.06    # BTU (British thermal unit - ISO) to Joules
+J2Btu = 1/Btu2J     # Joules to BTU (ISO)
 
 
 # Power:
+hp2W = 550 * lbf2N * ft2m # Horsepower (mechanical) to Watts
+W2hp = 1/hp2W       # Watts to Horsepower (mechanical)
+metric_hp2W = 75 * kp2N  # Horsepower (metric) to Watts
+W2hp_metric = 1/metric_hp2W       # Watts to Horsepower (metric)
+
 
 # Temperature:
 def celsius2kelvin(temp):
