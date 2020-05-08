@@ -1,8 +1,46 @@
 """
 
-April 2017
+Universal constants and Conversion of units to and from International System of units.
 
-MRodriguez
+Content:
+--------
+    Constants:
+    ----------
+        grav : Gravitational acceleration
+        Ru : Universal gas constant
+    
+    Conversion of units:
+    --------------------
+        Angles:
+            Radians and degrees
+
+        Distance: Between meters [m] and:
+            feet (ft), inches (in), Flight Level (FL), Nautical Mile (nm)
+        
+        Speed: Between meters per secons (ms) [m/s] and:
+            Knots [kts], mile sper hour [MPH]
+        
+        Mass: Between kilograms [kg] and:
+            Pounds [lb], slugs [slug]
+        
+        Force: Between Newtons [N] and:
+            kiloponds [kp, kgf], pound-force [lbf]
+        
+        Pressure: Between Pascals [Pa] and:
+            Bars [bar], milibars [mbar], Torricelli [Torr, mmHg], atmospheres [atm]
+        
+        Energy: Between Joules [J] and:
+            kilowatt-hour [kWh], calories [cal], Briish Thermal Units [Btu]
+        
+        Power: Between Watts [W] and:
+            metric horsepower [hp], mechanical horsepower [hp]
+        
+        Temperatura: Between Celsius [ºC], Kelvin [K], Rankine [R] and Fahrenheit [ºF]
+
+
+MRodriguez. 2020
+
+
 """
 
 
@@ -166,3 +204,4 @@ def rankine_to_kelvin(temp):
     From Rankine (R) to Kelvin (K)
     """
     return temp*5/9
+
