@@ -1,15 +1,64 @@
 """
 
-April 2017
 
-MRodriguez
+
+MRodriguez. 2020
 """
 
 import pyturb.air_model as air_model
 import pyturb.utils.units as units
+import numpy as np
 import pandas as pd
 
-pd.
+file_atmos1975 = './atmos_layers_coesa1975.dat'
+
+
+def get_atmosdata(h):
+    """
+    get_atmosdata:
+    --------------
+
+    Reads data in atmos_layes_coesa1975.dat and stores it into a Pandas dataframe.
+
+    Data corresponds to the Nasa Technical Report "Defining constants, equations, and abbreviated 
+    tables of the 1975 U.S. Standard Atmosphere".
+
+    The dataframe stores the temperature gradient, temperature base value and pressure base value
+    for each laye from sea-level (0 m) to 85 km (mesosphere).
+
+    + Inputs:
+    ---------
+        h: float. Geopotential altitude [m]
+
+    + Outputs:
+    ----------
+        temp_gradient: float. Temperature gradient for a given atmosphere layer [K/m]
+        base_temperature: float. Temperature at the beginning of the layer [K]
+        base_pressure: float. Pressure at the beginning of the layer [Pa]
+        base_height: float. Geopotential height at the beginning of the layer [m]
+        layer: str. Atmosphere layer
+    """
+
+    # Read atmos data:
+    atmos_data = pd.read_csv(file_atmos1975, sep='\t')
+    layer_mask = np.where(atmos_data['geopotential_height'].values>h)
+
+    if np.size(layer_mask)>0:
+        # Extract infomation of the layer corresponding to h:
+        temp_gradient = atmos_data.iloc[layer_mask[0][0]]['temperature_gradient']
+        base_temperature = atmos_data.iloc[layer_mask[0][0]]['base_temperature']
+        base_pressure = atmos_data.iloc[layer_mask[0][0]]['base_pressure']
+        base_height = atmos_data.iloc[layer_mask[0][0]]['geopotential_height']
+        layer = atmos_data.iloc[layer_mask[0][0]]['atmos_layer']
+    else:
+        # Layer not implemented:
+        temp_gradient = np.nan
+        base_temperature = np.nan
+        base_pressure = np.nan
+        base_height = np.nan
+        layer = 'layer not implemented for h={0}m'.format(h)
+
+    return temp_gradient, base_temperature, base_pressure, base_height, layer
 
 
 def temp_isa(h, isa_dev=0):
