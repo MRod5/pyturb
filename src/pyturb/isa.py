@@ -1,18 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-International Standard Atmosphere conditions for temperature and pressure as a
-function of the geometric altitude.
-
-Troposphere layer implemented.
-
-Content:
---------
-    + temp_ISA
-    + pres_ISA
-    + height_ISA
-
-Part of pyturb. Tests pending.
 
 April 2017
 
@@ -20,7 +6,10 @@ MRodriguez
 """
 
 import pyturb.air_model as air_model
-import pyturb.units as units
+import pyturb.utils.units as units
+import pandas as pd
+
+pd.
 
 
 def temp_isa(h, isa_dev=0):
