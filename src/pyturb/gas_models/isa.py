@@ -13,7 +13,7 @@ import pandas as pd
 file_atmos1975 = './atmos_layers_coesa1975.dat'
 
 
-def get_atmosdata(h):
+def get_atmosdata(height):
     """
     get_atmosdata:
     --------------
@@ -40,16 +40,16 @@ def get_atmosdata(h):
     """
 
     # Read atmos data:
-    atmos_data = pd.read_csv(file_atmos1975, sep='\t')
-    layer_mask = np.where(atmos_data['geopotential_height'].values>h)
+    atmos_data = pd.read_csv(file_atmos1975, sep='|')
+    layer_mask = np.where(atmos_data['geopotential_height'].values<=height)
 
     if np.size(layer_mask)>0:
         # Extract infomation of the layer corresponding to h:
-        temp_gradient = atmos_data.iloc[layer_mask[0][0]]['temperature_gradient']
-        base_temperature = atmos_data.iloc[layer_mask[0][0]]['base_temperature']
-        base_pressure = atmos_data.iloc[layer_mask[0][0]]['base_pressure']
-        base_height = atmos_data.iloc[layer_mask[0][0]]['geopotential_height']
-        layer = atmos_data.iloc[layer_mask[0][0]]['atmos_layer']
+        temp_gradient = atmos_data.iloc[layer_mask[0][-1]]['temperature_gradient']
+        base_temperature = atmos_data.iloc[layer_mask[0][-1]]['base_temperature']
+        base_pressure = atmos_data.iloc[layer_mask[0][-1]]['base_pressure']
+        base_height = atmos_data.iloc[layer_mask[0][-1]]['geopotential_height']
+        layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer']
     else:
         # Layer not implemented:
         temp_gradient = np.nan
@@ -61,7 +61,7 @@ def get_atmosdata(h):
     return temp_gradient, base_temperature, base_pressure, base_height, layer
 
 
-def temp_isa(h, isa_dev=0):
+def temp_isa(height, isa_dev=0):
     """
     ISA temperature:
     ----------------
@@ -71,7 +71,7 @@ def temp_isa(h, isa_dev=0):
     
     + Inputs:
     ---------
-        h: float. Geometric altitude [m]
+        h: ndarray. Geometric altitude [m]
         isa_dev: float. Standard day base temperature deviation [K]
         
     + Outputs:
@@ -79,15 +79,23 @@ def temp_isa(h, isa_dev=0):
         temp_isa: float. Static temperature at altitude "h" [K]
         
     """
-    if h <= 11000:
-        
-        temp_base = 15 + 273.15 + isa_dev  # Base temperature at sea level [K]
-        temp_rate = 6.5e-3  # Layer rate of temperature [K/m]
 
-        return temp_base - temp_rate*h
+    if type(height)==np.ndarray:
+        temperature = np.zeros_like(height)
+        for h in height:
+            temp_gradient, base_temperature, base_pressure, base_height, _ = get_atmosdata(h)
+            T = temp_base + temp_gradient*(h-base_height)
+            temperature = np.append(temperature, T)
+
+    elif type(height)==float:
+        temp_gradient, base_temperature, base_pressure, base_height, _ = get_atmosdata(height)
+        temperature = temp_base + temp_gradient*(h-base_height)
+
     else:
-        print("Layer not implemented yet for altitude {}".format(h))
-        return
+        print('Input height ({}) is not float or np.ndarray'.format(height))
+
+    
+    return temperature
     
 
 def pres_isa(h):
