@@ -61,7 +61,7 @@ def get_atmosdata(height):
     return temp_gradient, base_temperature, base_pressure, base_height, layer
 
 
-def temp_isa(height, isa_dev=0):
+def temperature_isa(height, isa_dev=0):
     """
     ISA temperature:
     ----------------
@@ -76,7 +76,7 @@ def temp_isa(height, isa_dev=0):
         
     + Outputs:
     ----------
-        temp_isa: float. Static temperature at altitude "h" [K]
+        temperature: ndarray or float. Static temperature at input height [K]
         
     """
 
@@ -99,21 +99,21 @@ def temp_isa(height, isa_dev=0):
     return temperature
     
 
-def pres_isa(h):
+def pressure_isa(h):
     """
     ISA pressure:
     -------------
     
-    International Standard Atmosphere pressure as a function of the altitude
-    above sea level.
+    International Standard Atmosphere pressure-altitude as a function of
+    the geopotential height.
 
     + Inputs:
     ---------
-        h: float. Geometric altitude [m]
+        h: ndarray or list or float or int. Geometric altitude [m]
         
     + Outputs:
     ----------
-        press_isa: float. Static pressure at altitude "h" [Pa]
+        pressure: ndarray or float. Static pressure at input height [Pa]
 
     """
     if h <= 11000:
@@ -163,3 +163,7 @@ def height_isa(p0):
     h0 = temp_base/temp_rate*(1 - ((p0/press_base)**(air_constant*temp_rate/g)))
 
     return h0
+
+def density_isa(height):
+
+    return None
