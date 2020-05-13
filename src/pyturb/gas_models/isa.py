@@ -7,10 +7,12 @@ MRodriguez. 2020
 
 import pyturb.air_model as air_model
 import pyturb.utils.units as units
+from pyturb.air_model import IdealGas
 import numpy as np
 import pandas as pd
 
 file_atmos1975 = './atmos_layers_coesa1975.dat'
+air = IdealGas()
 
 
 def get_atmosdata(height):
@@ -49,7 +51,7 @@ def get_atmosdata(height):
         base_temperature = atmos_data.iloc[layer_mask[0][-1]]['base_temperature']
         base_pressure = atmos_data.iloc[layer_mask[0][-1]]['base_pressure']
         base_height = atmos_data.iloc[layer_mask[0][-1]]['geopotential_height']
-        layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer']
+        layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer'].strip()
     else:
         # Layer not implemented:
         temp_gradient = np.nan
@@ -80,14 +82,14 @@ def temperature_isa(height, isa_dev=0):
         
     """
 
-    if type(height)==np.ndarray or type(height)==list:
+    if type(height) in [np.ndarray, list]:
         temperature = np.zeros_like(height)
         for ii, h in enumerate(height):
             temp_gradient, base_temperature, base_pressure, base_height, _ = get_atmosdata(h)
             T = base_temperature + temp_gradient*(h-base_height)
             temperature[ii] = T
 
-    elif type(height)==float or type(height)==int:
+    elif type(height) in [float, int, np.float64, np.float32, np.int64, np.int32]:
         temp_gradient, base_temperature, base_pressure, base_height, _ = get_atmosdata(height)
         temperature = base_temperature + temp_gradient*(height-base_height)
 
@@ -99,7 +101,7 @@ def temperature_isa(height, isa_dev=0):
     return temperature
     
 
-def pressure_isa(h):
+def pressure_isa(height, isa_dev=0):
     """
     ISA pressure:
     -------------
@@ -110,29 +112,52 @@ def pressure_isa(h):
     + Inputs:
     ---------
         h: ndarray or list or float or int. Geometric altitude [m]
+        isa_dev: float. Standard day base temperature deviation [K]
         
     + Outputs:
     ----------
         pressure: ndarray or float. Static pressure at input height [Pa]
 
     """
-    if h <= 11000:
-        press_base = 101325  # SL base pressure [Pa], standard day
-        temp_rate = 6.5e-3  # Layer rate of temperature [K/m]
-        temp_base = 15 + 273.15  # Base temperature at sea level [K], standard day
 
-        # Get constants:
-        g = units.grav
-        am = air_model.Air()
-        air_constant = am.R_air
+    if type(height) in [np.ndarray, list]:
+        pressure = np.zeros_like(height)
+        if isa_dev==0:
+            isa_dev = np.zeros_like(height)
 
-        # Calculate pressure:
-        press_isa = press_base*((1-temp_rate/temp_base*h)**(g/air_constant/temp_rate))
         
-        return press_isa
+        for ii, (h, isa_dev_) in enumerate(zip(height, isa_dev)):
+            temp_gradient, base_temperature, base_pressure, base_height, layer = get_atmosdata(h)
+            
+            temperature = temperature_isa(h, isa_dev_)
+
+            if layer in ['tropopause', 'stratopause']:
+                factor = np.exp(-units.grav/air.R_air/temperature*(h-base_height))
+                pressure[ii] = base_pressure * factor
+            else:
+                factor = (temperature/base_temperature)**(units.grav/air.R_air/(-temp_gradient))
+                pressure[ii] = base_pressure * factor
+
+
+    elif type(height) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+        temp_gradient, base_temperature, base_pressure, base_height, layer = get_atmosdata(height)
+
+        temperature = temperature_isa(height, isa_dev)
+
+        if layer in ['tropopause', 'stratopause']:
+            factor = np.exp(-units.grav/air.R_air/temperature*(height-base_height))
+            pressure = base_pressure * factor
+        else:
+            
+            factor = (temperature/base_temperature)**(units.grav/air.R_air/(-temp_gradient))
+            pressure = base_pressure * factor
+
+
     else:
-        print("Layer not implemented yet for altitude {}".format(h))
-        return
+        print('Input height ({}) is not float or np.ndarray'.format(height))
+        pressure = np.nan
+
+    return pressure
 
 
 def height_isa(p0):
@@ -163,6 +188,7 @@ def height_isa(p0):
     h0 = temp_base/temp_rate*(1 - ((p0/press_base)**(air_constant*temp_rate/g)))
 
     return h0
+
 
 def density_isa(height):
 
