@@ -67,11 +67,11 @@ def temp_isa(height, isa_dev=0):
     ----------------
     
     International Standard Atmosphere temperature as a function of the
-    altitude above sea level.
+    geopotential height [m].
     
     + Inputs:
     ---------
-        h: ndarray. Geometric altitude [m]
+        h: ndarray or list or float or int. Geometric altitude [m]
         isa_dev: float. Standard day base temperature deviation [K]
         
     + Outputs:
@@ -80,19 +80,20 @@ def temp_isa(height, isa_dev=0):
         
     """
 
-    if type(height)==np.ndarray:
+    if type(height)==np.ndarray or type(height)==list:
         temperature = np.zeros_like(height)
-        for h in height:
+        for ii, h in enumerate(height):
             temp_gradient, base_temperature, base_pressure, base_height, _ = get_atmosdata(h)
-            T = temp_base + temp_gradient*(h-base_height)
-            temperature = np.append(temperature, T)
+            T = base_temperature + temp_gradient*(h-base_height)
+            temperature[ii] = T
 
-    elif type(height)==float:
+    elif type(height)==float or type(height)==int:
         temp_gradient, base_temperature, base_pressure, base_height, _ = get_atmosdata(height)
-        temperature = temp_base + temp_gradient*(h-base_height)
+        temperature = base_temperature + temp_gradient*(height-base_height)
 
     else:
         print('Input height ({}) is not float or np.ndarray'.format(height))
+        temperature = np.nan
 
     
     return temperature
