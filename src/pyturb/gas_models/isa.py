@@ -5,14 +5,18 @@
 MRodriguez. 2020
 """
 
-import pyturb.air_model as air_model
 import pyturb.utils.units as units
 from pyturb.air_model import IdealGas
 import numpy as np
 import pandas as pd
+import os
 
-file_atmos1975 = './atmos_layers_coesa1975.dat'
-air = IdealGas()
+isa_dir = os.path.dirname(__file__) 
+file_atmos1975 = os.path.join(isa_dir, r'./atmos_layers_coesa1975.dat')
+
+coesaRu = 8.31432 # J/mol/K (universal gas constant as in COESA 1975)
+Mair = 0.0289644 # kg/mol (mean molecular mass of air as in COESA 1975)
+coesaRair = coesaRu/Mair
 
 
 def get_atmosdata(height):
@@ -58,7 +62,7 @@ def get_atmosdata(height):
         base_temperature = np.nan
         base_pressure = np.nan
         base_height = np.nan
-        layer = 'layer not implemented for h={0}m'.format(h)
+        layer = 'layer not implemented for h={0}m'.format(height)
 
     return temp_gradient, base_temperature, base_pressure, base_height, layer
 
@@ -85,12 +89,13 @@ def temperature_isa(height, isa_dev=0):
     if type(height) in [np.ndarray, list]:
         temperature = np.zeros_like(height)
         for ii, h in enumerate(height):
-            temp_gradient, base_temperature, base_pressure, base_height, _ = get_atmosdata(h)
+            h = np.float32(h) if (type(h)==int) else h
+            temp_gradient, base_temperature, _, base_height, _ = get_atmosdata(h)
             T = base_temperature + temp_gradient*(h-base_height)
             temperature[ii] = T
 
     elif type(height) in [float, int, np.float64, np.float32, np.int64, np.int32]:
-        temp_gradient, base_temperature, base_pressure, base_height, _ = get_atmosdata(height)
+        temp_gradient, base_temperature, _, base_height, _ = get_atmosdata(height)
         temperature = base_temperature + temp_gradient*(height-base_height)
 
     else:
@@ -132,10 +137,10 @@ def pressure_isa(height, isa_dev=0):
             temperature = temperature_isa(h, isa_dev_)
 
             if layer in ['tropopause', 'stratopause']:
-                factor = np.exp(-units.grav/air.R_air/temperature*(h-base_height))
+                factor = np.exp(-units.grav/coesaRair/temperature*(h-base_height))
                 pressure[ii] = base_pressure * factor
             else:
-                factor = (temperature/base_temperature)**(units.grav/air.R_air/(-temp_gradient))
+                factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
                 pressure[ii] = base_pressure * factor
 
 
@@ -145,11 +150,11 @@ def pressure_isa(height, isa_dev=0):
         temperature = temperature_isa(height, isa_dev)
 
         if layer in ['tropopause', 'stratopause']:
-            factor = np.exp(-units.grav/air.R_air/temperature*(height-base_height))
+            factor = np.exp(-units.grav/coesaRair/temperature*(height-base_height))
             pressure = base_pressure * factor
         else:
             
-            factor = (temperature/base_temperature)**(units.grav/air.R_air/(-temp_gradient))
+            factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
             pressure = base_pressure * factor
 
 
@@ -161,33 +166,8 @@ def pressure_isa(height, isa_dev=0):
 
 
 def height_isa(p0):
-    """
-    ISA Height:
-    -----------
-    
-    Height above sea level, assuming the International Standard Atmosphere pressure model.
-    
-    + Inputs:
-    ---------
-        P0: float. Static pressure at a given altitude [Pa]
-        
-    + Outputs:
-    ----------
-        h0: float. Height over sea level [m]
-    """
 
-    press_base = 101325  # SL base pressure [Pa], standard day
-    temp_rate = 6.5e-3  # Layer rate of temperature [K/m]
-    temp_base = 15 + 273.15  # Base temperature at sea level [K], standard day
-
-    # Get constants:
-    g = units.grav
-    am = air_model.Air()
-    air_constant = am.R_air
-
-    h0 = temp_base/temp_rate*(1 - ((p0/press_base)**(air_constant*temp_rate/g)))
-
-    return h0
+    return None
 
 
 def density_isa(height):
