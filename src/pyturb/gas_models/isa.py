@@ -54,6 +54,7 @@ def get_atmosdata(height):
         temp_gradient = atmos_data.iloc[layer_mask[0][-1]]['temperature_gradient']
         base_temperature = atmos_data.iloc[layer_mask[0][-1]]['base_temperature']
         base_pressure = atmos_data.iloc[layer_mask[0][-1]]['base_pressure']
+        base_density = atmos_data.iloc[layer_mask[0][-1]]['base_density']
         base_height = atmos_data.iloc[layer_mask[0][-1]]['geopotential_height']
         layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer'].strip()
     else:
@@ -61,10 +62,11 @@ def get_atmosdata(height):
         temp_gradient = np.nan
         base_temperature = np.nan
         base_pressure = np.nan
+        base_density = np.nan
         base_height = np.nan
         layer = 'layer not implemented for h={0}m'.format(height)
 
-    return temp_gradient, base_temperature, base_pressure, base_height, layer
+    return temp_gradient, base_temperature, base_pressure, base_density, base_height, layer
 
 
 def temperature_isa(height, isa_dev=0):
@@ -96,7 +98,7 @@ def temperature_isa(height, isa_dev=0):
                 h = np.float32(h) if (type(h)==int) else h # Avoid integers to avoid truncation
                 
                 # Retrieve layer information:
-                temp_gradient, base_temperature, _, base_height, _ = get_atmosdata(h)
+                temp_gradient, base_temperature, _, _, base_height, _ = get_atmosdata(h)
                 
                 #Get temperature value
                 T = base_temperature + temp_gradient*(h-base_height)
@@ -111,7 +113,7 @@ def temperature_isa(height, isa_dev=0):
     elif type(height) in [float, int, np.float64, np.float32, np.int64, np.int32]:
         # Height is discrete value:
         # Retrieve layer information:
-        temp_gradient, base_temperature, _, base_height, _ = get_atmosdata(height)
+        temp_gradient, base_temperature, _, _, base_height, _ = get_atmosdata(height)
 
         # Get temperature
         temperature = base_temperature + temp_gradient*(height-base_height)
@@ -154,7 +156,7 @@ def pressure_isa(height, isa_dev=0):
         for ii, (h, isa_dev_) in enumerate(zip(height, isa_dev)):
             if type(h) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
                 # Retrieve layer information:
-                temp_gradient, base_temperature, base_pressure, base_height, layer = get_atmosdata(h)
+                temp_gradient, base_temperature, base_pressure, base_density, base_height, layer = get_atmosdata(h)
                 
                 # Calculate temperature at h
                 temperature = temperature_isa(h, isa_dev_)
@@ -178,7 +180,7 @@ def pressure_isa(height, isa_dev=0):
     elif type(height) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
         # Height is discrete value:
         # Retrieve layer information:
-        temp_gradient, base_temperature, base_pressure, base_height, layer = get_atmosdata(height)
+        temp_gradient, base_temperature, base_pressure, base_density, base_height, layer = get_atmosdata(height)
 
         # Calculate temperature at height:
         temperature = temperature_isa(height, isa_dev)
@@ -209,5 +211,78 @@ def height_isa(p0):
 
 
 def density_isa(height):
+    """
+    ISA density:
+    -------------
+    
+    International Standard Atmosphere density-altitude as a function of
+    the geopotential height.
 
-    return None
+    + Inputs:
+    ---------
+        h: ndarray or list or float or int. Geometric altitude [m]
+        isa_dev: float. Standard day base temperature deviation [K]
+        
+    + Outputs:
+    ----------
+        density: ndarray or float. Static density at input height [Pa]
+
+    """
+
+    # Check is height is array/list or discrete value:
+    if type(height) in [np.ndarray, list]:
+        # Array or list of heights:
+        isa_dev = np.zeros_like(height) if isa_dev==0 else isa_dev
+
+        density = np.zeros_like(height)
+
+        for ii, (h, isa_dev_) in enumerate(zip(height, isa_dev)):
+            if type(h) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+                # Retrieve layer information:
+                temp_gradient, base_temperature, base_pressure, base_density, base_height, layer = get_atmosdata(h)
+                
+                # Calculate temperature at h
+                temperature = temperature_isa(h, isa_dev_)
+
+                # Check if layer is isothermal:
+                if layer in ['tropopause', 'stratopause']:
+                    factor = np.exp(-units.grav/coesaRair/temperature*(h-base_height))
+
+                else:
+                    factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
+
+                # Get density value
+                density[ii] = base_density * factor
+
+            else:
+                # If height is not aray, list, float, int...
+                print('Input height ({}) is not float or np.ndarray'.format(height))
+                density = np.nan
+
+
+    elif type(height) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+        # Height is discrete value:
+        # Retrieve layer information:
+        temp_gradient, base_temperature, base_pressure, base_density, base_height, layer = get_atmosdata(height)
+
+        # Calculate temperature at height:
+        temperature = temperature_isa(height, isa_dev)
+
+        # Check if layer is isothermal:
+        if layer in ['tropopause', 'stratopause']:
+            factor = np.exp(-units.grav/coesaRair/temperature*(height-base_height))
+            
+        else:
+            factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
+
+        # Get density value
+        density = base_density * factor
+
+
+    else:
+        # If height is not aray, list, float, int...
+        print('Input height ({}) is not float or np.ndarray'.format(height))
+        density = np.nan
+
+
+    return density
