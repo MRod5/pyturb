@@ -86,19 +86,38 @@ def temperature_isa(height, isa_dev=0):
         
     """
 
+    # Check is height is array/list or discrete value:
     if type(height) in [np.ndarray, list]:
+        # Array or list of heights:
         temperature = np.zeros_like(height)
+
         for ii, h in enumerate(height):
-            h = np.float32(h) if (type(h)==int) else h
-            temp_gradient, base_temperature, _, base_height, _ = get_atmosdata(h)
-            T = base_temperature + temp_gradient*(h-base_height)
-            temperature[ii] = T
+            if type(h) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+                h = np.float32(h) if (type(h)==int) else h # Avoid integers to avoid truncation
+                
+                # Retrieve layer information:
+                temp_gradient, base_temperature, _, base_height, _ = get_atmosdata(h)
+                
+                #Get temperature value
+                T = base_temperature + temp_gradient*(h-base_height)
+                temperature[ii] = T
+
+        else:
+            # If height is not aray, list, float, int...
+            print('Input height ({}) is not float or np.ndarray'.format(height))
+            temperature = np.nan
+
 
     elif type(height) in [float, int, np.float64, np.float32, np.int64, np.int32]:
+        # Height is discrete value:
+        # Retrieve layer information:
         temp_gradient, base_temperature, _, base_height, _ = get_atmosdata(height)
+
+        # Get temperature
         temperature = base_temperature + temp_gradient*(height-base_height)
 
     else:
+        # If height is not aray, list, float, int...
         print('Input height ({}) is not float or np.ndarray'.format(height))
         temperature = np.nan
 
@@ -125,42 +144,61 @@ def pressure_isa(height, isa_dev=0):
 
     """
 
+    # Check is height is array/list or discrete value:
     if type(height) in [np.ndarray, list]:
+        # Array or list of heights:
+        isa_dev = np.zeros_like(height) if isa_dev==0 else isa_dev
+
         pressure = np.zeros_like(height)
-        if isa_dev==0:
-            isa_dev = np.zeros_like(height)
 
-        
         for ii, (h, isa_dev_) in enumerate(zip(height, isa_dev)):
-            temp_gradient, base_temperature, base_pressure, base_height, layer = get_atmosdata(h)
-            
-            temperature = temperature_isa(h, isa_dev_)
+            if type(h) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+                # Retrieve layer information:
+                temp_gradient, base_temperature, base_pressure, base_height, layer = get_atmosdata(h)
+                
+                # Calculate temperature at h
+                temperature = temperature_isa(h, isa_dev_)
 
-            if layer in ['tropopause', 'stratopause']:
-                factor = np.exp(-units.grav/coesaRair/temperature*(h-base_height))
+                # Check if layer is isothermal:
+                if layer in ['tropopause', 'stratopause']:
+                    factor = np.exp(-units.grav/coesaRair/temperature*(h-base_height))
+
+                else:
+                    factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
+
+                # Get pressure value
                 pressure[ii] = base_pressure * factor
+
             else:
-                factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
-                pressure[ii] = base_pressure * factor
+                # If height is not aray, list, float, int...
+                print('Input height ({}) is not float or np.ndarray'.format(height))
+                pressure = np.nan
 
 
     elif type(height) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+        # Height is discrete value:
+        # Retrieve layer information:
         temp_gradient, base_temperature, base_pressure, base_height, layer = get_atmosdata(height)
 
+        # Calculate temperature at height:
         temperature = temperature_isa(height, isa_dev)
 
+        # Check if layer is isothermal:
         if layer in ['tropopause', 'stratopause']:
             factor = np.exp(-units.grav/coesaRair/temperature*(height-base_height))
-            pressure = base_pressure * factor
-        else:
             
+        else:
             factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
-            pressure = base_pressure * factor
+
+        # Get pressure value
+        pressure = base_pressure * factor
 
 
     else:
+        # If height is not aray, list, float, int...
         print('Input height ({}) is not float or np.ndarray'.format(height))
         pressure = np.nan
+
 
     return pressure
 
