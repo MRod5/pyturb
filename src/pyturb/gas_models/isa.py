@@ -161,6 +161,7 @@ def pressure_isa(height, isa_dev=0):
 
                 # Check if layer is isothermal:
                 if layer in ['tropopause', 'stratopause']:
+                    # XXX Posible errata en la temperatura, debe ser temp_base
                     factor = np.exp(-units.grav/coesaRair/temperature*(h-base_height))
 
                 else:
@@ -332,6 +333,59 @@ def density_state_eq(height, isa_dev=0):
     return density
 
 
-def height_isa(p0):
+def height_from_temperature_isa(T, isa_dev=0, layer = None):
+    """
+    """
 
-    return None
+    if layer is None:
+        atmos_data = pd.read_csv(file_atmos1975, sep='|')
+
+        Tisa = T - isa_dev
+
+        layer_mask = np.where(atmos_data['base_temperature'].values>Tisa)
+
+        temp_gradient = atmos_data.iloc[layer_mask[0]]['temperature_gradient']
+        base_temperature = atmos_data.iloc[layer_mask[0]]['base_temperature']
+        base_height = atmos_data.iloc[layer_mask[0]]['geopotential_height']
+        layer = atmos_data.iloc[layer_mask[0]]['atmos_layer']
+
+        height = np.zeros(np.size(temp_gradient), dtype=np.float64)
+        ii = 0
+        for temp_grad, base_temp, base_h, layer_ in zip(temp_gradient, base_temperature, base_height, layer):
+            if layer_.strip() not in ['tropopause', 'stratopause']:
+                height[ii] = (Tisa - base_temp)/temp_grad + base_h
+            ii += 1
+    else:
+        atmos_data = pd.read_csv(file_atmos1975, sep='|')
+        base_temp = atmos_data.loc[atmos_data['atmos_layer']==layer]['base_temperature']
+        temp_grad = atmos_data.loc[atmos_data['atmos_layer']==layer]['temperature_gradient']
+        base_h = atmos_data.loc[atmos_data['atmos_layer']==layer]['geopotential_height']
+        Tisa = T - isa_dev
+        height = (Tisa - base_temp)/temp_grad + base_h
+        
+    
+    return height
+
+
+def height_from_pressure_isa(p, isa_dev=0):
+    atmos_data = pd.read_csv(file_atmos1975, sep='|')
+
+    layer_mask = np.where(atmos_data['base_pressure'].values>p)
+
+    temp_gradient = atmos_data.iloc[layer_mask[0][-1]]['temperature_gradient']
+    base_temperature = atmos_data.iloc[layer_mask[0][-1]]['base_temperature']
+    base_pressure = atmos_data.iloc[layer_mask[0][-1]]['base_pressure']
+    base_height = atmos_data.iloc[layer_mask[0][-1]]['geopotential_height']
+    layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer']
+    
+    height = np.zeros(np.size(temp_gradient), dtype=np.float64)
+
+    if layer.strip() in ['tropopause', 'stratopause']:
+        height = base_height - np.log(p/base_pressure)*coesaRair/units.grav*base_temperature
+    else:
+        T = (p/base_pressure)**(-temp_gradient*coesaRair/units.grav)
+        print(T)
+        height = height_from_temperature_isa(T, isa_dev, layer)
+        
+
+    return height
