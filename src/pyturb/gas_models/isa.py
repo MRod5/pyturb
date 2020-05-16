@@ -1,7 +1,5 @@
 """
 
-
-
 MRodriguez. 2020
 """
 
@@ -11,9 +9,11 @@ import numpy as np
 import pandas as pd
 import os
 
+# Directory to the 1975 COESA data:
 isa_dir = os.path.dirname(__file__) 
 file_atmos1975 = os.path.join(isa_dir, r'./atmos_layers_coesa1975.dat')
 
+# Ideal gas constant and molecular mass of air as in 1975 COESA
 coesaRu = 8.31432 # J/mol/K (universal gas constant as in COESA 1975)
 Mair = 0.0289644 # kg/mol (mean molecular mass of air as in COESA 1975)
 coesaRair = coesaRu/Mair
@@ -203,11 +203,6 @@ def pressure_isa(height, isa_dev=0):
     return pressure
 
 
-def height_isa(p0):
-
-    return None
-
-
 def density_isa(height, isa_dev=0):
     """
     ISA density:
@@ -284,3 +279,59 @@ def density_isa(height, isa_dev=0):
 
 
     return density
+
+
+def density_state_eq(height, isa_dev=0):
+    """
+    ISA density:
+    -------------
+    
+    International Standard Atmosphere density-altitude as a function of
+    the geopotential height.
+
+    + Inputs:
+    ---------
+        h: ndarray or list or float or int. Geometric altitude [m]
+        isa_dev: float. Standard day base temperature deviation [K]
+        
+    + Outputs:
+    ----------
+        density: ndarray or float. Static density at input height [Pa]
+
+    """
+
+    # Check is height is array/list or discrete value:
+    if type(height) in [np.ndarray, list]:
+        # Array or list of heights:
+        density = np.zeros_like(height, dtype=np.float64)
+        
+        isa_dev = np.zeros_like(height, dtype=np.float64) if isa_dev==0 else isa_dev
+
+        for ii, (h, isa_dev_) in enumerate(zip(height, isa_dev)):
+            if type(h) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+                p = pressure_isa(h, isa_dev_)
+                T = temperature_isa(h, isa_dev_)
+                rho = p/coesaRair/T
+
+                density[ii] = rho
+
+    elif type(height) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+        # Height is discrete value:
+                p = pressure_isa(height, isa_dev)
+                T = temperature_isa(height, isa_dev)
+                rho = p/coesaRair/T
+
+                density = rho
+
+    else:
+        # If height is not aray, list, float, int...
+        print('Input height ({}) is not float or np.ndarray'.format(height))
+        density = np.nan
+
+
+    return density
+
+
+def height_isa(p0):
+
+    return None
