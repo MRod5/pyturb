@@ -1,9 +1,9 @@
-info|atmos_layer|geopotential_height|temperature_gradient|base_temperature|base_pressure|base_density|
-linear, T decreasing  | troposphere   | 0     | -0.0065 | 288.150 | 101325 | 1.224999e0
-isothermal            | tropopause    | 11000 | 0.0     | 216.650 | 22632  | 3.639178e-1
-linear, T increasing  | stratosphere1 | 20000 | 0.0010  | 216.650 | 5474.9 | 8.803480e-2
-linear, T increasing  | stratosphere2 | 32000 | 0.0028  | 228.650 | 868.02 | 1.322500e-2
-isothermal            | stratopause   | 47000 | 0.0     | 270.650 | 110.91 | 1.427532e-3
-linear, T decreasing  | mesosphere1   | 51000 | -0.0028 | 270.650 | 66.939 | 8.616049e-4
-linear, T decreasing  | mesosphere2   | 71000 | -0.0020 | 214.650 | 3.9564 | 6.421099e-5
-isothermal            | mesosphere3   | 84852 | 0       | 186.946 | 0.3734 | 6.957879e-6
+info|atmos_layer|geopotential_height|temperature_gradient|base_temperature|base_pressure|base_density|geopotential_height_limit
+linear, T decreasing  | troposphere   | 0     | -0.0065 | 288.150 | 101325 | 1.224999e0  | 11000
+isothermal            | tropopause    | 11000 | 0.0     | 216.650 | 22632  | 3.639178e-1 | 20000
+linear, T increasing  | stratosphere1 | 20000 | 0.0010  | 216.650 | 5474.9 | 8.803480e-2 | 32000
+linear, T increasing  | stratosphere2 | 32000 | 0.0028  | 228.650 | 868.02 | 1.322500e-2 | 47000
+isothermal            | stratopause   | 47000 | 0.0     | 270.650 | 110.91 | 1.427532e-3 | 51000
+linear, T decreasing  | mesosphere1   | 51000 | -0.0028 | 270.650 | 66.939 | 8.616049e-4 | 71000
+linear, T decreasing  | mesosphere2   | 71000 | -0.0020 | 214.650 | 3.9564 | 6.421099e-5 | 84852
+isothermal            | mesosphere3   | 84852 | 0       | 186.946 | 0.3734 | 6.957879e-6 | 1e6
