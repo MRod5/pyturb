@@ -88,7 +88,7 @@ def temperature_isa(height, isa_dev=0):
         
     """
 
-    # Check is height is array/list or discrete value:
+    # Check if height is array/list or discrete value:
     if type(height) in [np.ndarray, list]:
         # Array or list of heights:
         temperature = np.zeros_like(height, dtype=np.float64)
@@ -104,7 +104,7 @@ def temperature_isa(height, isa_dev=0):
 
             else:
                 # If height is not aray, list, float, int...
-                print('Input height ({}) is not float or np.ndarray'.format(height))
+                print('Input height ({}) is not numeric or np.ndarray'.format(height))
                 temperature = np.nan
 
 
@@ -118,7 +118,7 @@ def temperature_isa(height, isa_dev=0):
 
     else:
         # If height is not aray, list, float, int...
-        print('Input height ({}) is not float or np.ndarray'.format(height))
+        print('Input height ({}) is not numeric or np.ndarray'.format(height))
         temperature = np.nan
 
     
@@ -144,7 +144,7 @@ def pressure_isa(height, isa_dev=0):
 
     """
 
-    # Check is height is array/list or discrete value:
+    # Check if height is array/list or discrete value:
     if type(height) in [np.ndarray, list]:
         # Array or list of heights:
         isa_dev = np.zeros_like(height, dtype=np.float64) if isa_dev==0 else isa_dev
@@ -172,7 +172,7 @@ def pressure_isa(height, isa_dev=0):
 
             else:
                 # If height is not aray, list, float, int...
-                print('Input height ({}) is not float or np.ndarray'.format(height))
+                print('Input height ({}) is not numeric or np.ndarray'.format(height))
                 pressure = np.nan
 
 
@@ -197,7 +197,7 @@ def pressure_isa(height, isa_dev=0):
 
     else:
         # If height is not aray, list, float, int...
-        print('Input height ({}) is not float or np.ndarray'.format(height))
+        print('Input height ({}) is not numeric or np.ndarray'.format(height))
         pressure = np.nan
 
 
@@ -223,7 +223,7 @@ def density_isa(height, isa_dev=0):
 
     """
 
-    # Check is height is array/list or discrete value:
+    # Check if height is array/list or discrete value:
     if type(height) in [np.ndarray, list]:
         # Array or list of heights:
         isa_dev = np.zeros_like(height, dtype=np.float64) if isa_dev==0 else isa_dev
@@ -250,7 +250,7 @@ def density_isa(height, isa_dev=0):
 
             else:
                 # If height is not aray, list, float, int...
-                print('Input height ({}) is not float or np.ndarray'.format(height))
+                print('Input height ({}) is not numeric or np.ndarray'.format(height))
                 density = np.nan
 
 
@@ -275,7 +275,7 @@ def density_isa(height, isa_dev=0):
 
     else:
         # If height is not aray, list, float, int...
-        print('Input height ({}) is not float or np.ndarray'.format(height))
+        print('Input height ({}) is not numeric or np.ndarray'.format(height))
         density = np.nan
 
 
@@ -301,7 +301,7 @@ def density_state_eq(height, isa_dev=0):
 
     """
 
-    # Check is height is array/list or discrete value:
+    # Check if height is array/list or discrete value:
     if type(height) in [np.ndarray, list]:
         # Array or list of heights:
         density = np.zeros_like(height, dtype=np.float64)
@@ -342,7 +342,7 @@ def height_from_temperature_isa(T, isa_dev=0, layer = None):
 
         Tisa = T - isa_dev
 
-        layer_mask = np.where(atmos_data['base_temperature'].values>Tisa)
+        layer_mask = np.where(atmos_data['base_temperature'].values>=Tisa)
 
         temp_gradient = atmos_data.iloc[layer_mask[0]]['temperature_gradient']
         base_temperature = atmos_data.iloc[layer_mask[0]]['base_temperature']
@@ -357,9 +357,9 @@ def height_from_temperature_isa(T, isa_dev=0, layer = None):
             ii += 1
     else:
         atmos_data = pd.read_csv(file_atmos1975, sep='|')
-        base_temp = atmos_data.loc[atmos_data['atmos_layer']==layer]['base_temperature']
-        temp_grad = atmos_data.loc[atmos_data['atmos_layer']==layer]['temperature_gradient']
-        base_h = atmos_data.loc[atmos_data['atmos_layer']==layer]['geopotential_height']
+        base_temp = atmos_data.loc[atmos_data['atmos_layer']==layer]['base_temperature'].values[0]
+        temp_grad = atmos_data.loc[atmos_data['atmos_layer']==layer]['temperature_gradient'].values[0]
+        base_h = atmos_data.loc[atmos_data['atmos_layer']==layer]['geopotential_height'].values[0]
         Tisa = T - isa_dev
         height = (Tisa - base_temp)/temp_grad + base_h
         
@@ -367,25 +367,84 @@ def height_from_temperature_isa(T, isa_dev=0, layer = None):
     return height
 
 
-def height_from_pressure_isa(p, isa_dev=0):
-    atmos_data = pd.read_csv(file_atmos1975, sep='|')
+def height_from_pressure_isa(pressure, isa_dev=0):
+    """
+    height_from_pressue_isa:
+    ------------------------
 
-    layer_mask = np.where(atmos_data['base_pressure'].values>p)
+    Geopotential height that corresponds the the input pressure value, regarding the International
+    Standard Atmosphere.
 
-    temp_gradient = atmos_data.iloc[layer_mask[0][-1]]['temperature_gradient']
-    base_temperature = atmos_data.iloc[layer_mask[0][-1]]['base_temperature']
-    base_pressure = atmos_data.iloc[layer_mask[0][-1]]['base_pressure']
-    base_height = atmos_data.iloc[layer_mask[0][-1]]['geopotential_height']
-    layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer']
-    
-    height = np.zeros(np.size(temp_gradient), dtype=np.float64)
-
-    if layer.strip() in ['tropopause', 'stratopause']:
-        height = base_height - np.log(p/base_pressure)*coesaRair/units.grav*base_temperature
-    else:
-        T = (p/base_pressure)**(-temp_gradient*coesaRair/units.grav)
-        print(T)
-        height = height_from_temperature_isa(T, isa_dev, layer)
+    + Inputs:
+    ---------
+        pressure: ndarray or list or float or int. Altitude-pressure [Pa]
+        isa_dev: float. Standard day base temperature deviation [K]
         
+    + Outputs:
+    ----------
+        height: ndarray or float. Geopotential height corresponding to the input pressure [m]
+
+    """
+    # Check if height is array/list or discrete value:
+    if type(pressure) in [np.ndarray, list]:
+        # Array or list of heights:
+        isa_dev = np.zeros_like(pressure, dtype=np.float64) if isa_dev==0 else isa_dev
+        
+        height = np.zeros_like(pressure, dtype=np.float64)
+
+        for ii, (p, isa_dev_) in enumerate(zip(pressure, isa_dev)):
+            if type(p) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+                # Retrieve layer information:
+                atmos_data = pd.read_csv(file_atmos1975, sep='|')
+                layer_mask = np.where(atmos_data['base_pressure'].values>=p)
+                
+                # Layer mask where pressure is located:
+                temp_gradient = atmos_data.iloc[layer_mask[0][-1]]['temperature_gradient']
+                base_temperature = atmos_data.iloc[layer_mask[0][-1]]['base_temperature']
+                base_pressure = atmos_data.iloc[layer_mask[0][-1]]['base_pressure']
+                base_height = atmos_data.iloc[layer_mask[0][-1]]['geopotential_height']
+                layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer']
+        
+            if layer.strip() in ['tropopause', 'stratopause']:
+                h = base_height - np.log(p/base_pressure)*coesaRair/units.grav*base_temperature
+
+            else:
+                Tratio = (p/base_pressure)**(-temp_gradient*coesaRair/units.grav)
+                T = Tratio * base_temperature
+                h = height_from_temperature_isa(T, isa_dev_, layer)
+        
+            height[ii] = h
+
+    elif type(pressure) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+         # Pressure is a discrete value:
+
+        if type(pressure) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+            # Retrieve layer information:
+            atmos_data = pd.read_csv(file_atmos1975, sep='|')
+            layer_mask = np.where(atmos_data['base_pressure'].values>=pressure)
+                
+            # Layer mask where pressure is located:
+            temp_gradient = atmos_data.iloc[layer_mask[0][-1]]['temperature_gradient']
+            base_temperature = atmos_data.iloc[layer_mask[0][-1]]['base_temperature']
+            base_pressure = atmos_data.iloc[layer_mask[0][-1]]['base_pressure']
+            base_height = atmos_data.iloc[layer_mask[0][-1]]['geopotential_height']
+            layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer']
+        
+        if layer.strip() in ['tropopause', 'stratopause']:
+            # If layer is isothermal
+            h = base_height - np.log(pressure/base_pressure)*coesaRair/units.grav*base_temperature
+
+        else:
+            # If temperature gradient is not zero:
+            Tratio = (pressure/base_pressure)**(-temp_gradient*coesaRair/units.grav)
+            T = Tratio * base_temperature
+            h = height_from_temperature_isa(T, isa_dev, layer)
+        
+        height = h
+
+    else:
+        # If pressure is not aray, list, float, int...
+        print('Input pressure ({}) is not numeric or np.ndarray'.format(height))
+        pressure = np.nan
 
     return height
