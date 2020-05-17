@@ -109,6 +109,10 @@ def temperature_isa(height, isa_dev=0):
     ---------
         h: ndarray or list or float or int. Geometric altitude [m]
         isa_dev: float. Standard day base temperature deviation [K]
+                 isa_dev can be:
+                 + A discrete value: the same isa_dev is applied all temperatures
+                 + An array: every temperature has its own deviation
+                 By default isa_dev=0
         
     + Outputs:
     ----------
@@ -121,14 +125,15 @@ def temperature_isa(height, isa_dev=0):
         # Array or list of heights:
         temperature = np.zeros_like(height, dtype=np.float64)
 
-        for ii, h in enumerate(height):
+        isa_dev = isa_dev*np.ones_like(height, dtype=np.float64) if np.size(isa_dev)==1 else isa_dev
+        for ii, (h, isa_dev_) in enumerate(zip(height, isa_dev)):
             if type(h) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
                 # Retrieve layer information:
                 temp_gradient, base_temperature, _, _, base_height, _ = get_atmosdata(h)
                 
                 #Get temperature value
                 T = base_temperature + temp_gradient*(h-base_height)
-                temperature[ii] = T
+                temperature[ii] = T + isa_dev_
 
             else:
                 # If height is not aray, list, float, int...
@@ -143,6 +148,7 @@ def temperature_isa(height, isa_dev=0):
 
         # Get temperature
         temperature = base_temperature + temp_gradient*(height-base_height)
+        temperature += isa_dev
 
     else:
         # If height is not aray, list, float, int...
@@ -164,7 +170,12 @@ def pressure_isa(height, isa_dev=0):
     + Inputs:
     ---------
         h: ndarray or list or float or int. Geometric altitude [m]
-        isa_dev: float. Standard day base temperature deviation [K]
+        isa_dev: float. Should be zero for pressure-altitude with ISA coefficients
+                 Standard day base temperature deviation [K]
+                 isa_dev can be:
+                 + A discrete value: the same isa_dev is applied all temperatures
+                 + An array: every temperature has its own deviation
+                 By default isa_dev=0
         
     + Outputs:
     ----------
@@ -175,7 +186,7 @@ def pressure_isa(height, isa_dev=0):
     # Check if height is array/list or discrete value:
     if type(height) in [np.ndarray, list]:
         # Array or list of heights:
-        isa_dev = np.zeros_like(height, dtype=np.float64) if isa_dev==0 else isa_dev
+        isa_dev = isa_dev*np.ones_like(height, dtype=np.float64) if np.size(isa_dev)==1 else isa_dev
 
         pressure = np.zeros_like(height, dtype=np.float64)
 
@@ -244,6 +255,7 @@ def density_isa(height, isa_dev=0):
     ---------
         h: ndarray or list or float or int. Geometric altitude [m]
         isa_dev: float. Standard day base temperature deviation [K]
+
         
     + Outputs:
     ----------
@@ -254,7 +266,7 @@ def density_isa(height, isa_dev=0):
     # Check if height is array/list or discrete value:
     if type(height) in [np.ndarray, list]:
         # Array or list of heights:
-        isa_dev = np.zeros_like(height, dtype=np.float64) if isa_dev==0 else isa_dev
+        isa_dev = isa_dev*np.ones_like(height, dtype=np.float64) if np.size(isa_dev)==1 else isa_dev
 
         density = np.zeros_like(height, dtype=np.float64)
 
@@ -334,7 +346,7 @@ def density_state_eq(height, isa_dev=0):
         # Array or list of heights:
         density = np.zeros_like(height, dtype=np.float64)
         
-        isa_dev = np.zeros_like(height, dtype=np.float64) if isa_dev==0 else isa_dev
+        isa_dev = isa_dev*np.ones_like(height, dtype=np.float64) if np.size(isa_dev)==1 else isa_dev
 
         for ii, (h, isa_dev_) in enumerate(zip(height, isa_dev)):
             if type(h) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
@@ -389,7 +401,7 @@ def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
     # Check if temperature is array/list or discrete value:
     if type(temperature) in [np.ndarray, list]:
         # Array or list of temperatures:
-        isa_dev = np.zeros_like(temperature, dtype=np.float64) if isa_dev==0 else isa_dev
+        isa_dev = isa_dev*np.ones_like(height, dtype=np.float64) if np.size(isa_dev)==1 else isa_dev
         
         height = []
 
