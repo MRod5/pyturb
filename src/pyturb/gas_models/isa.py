@@ -160,7 +160,7 @@ def pressure_isa(height, isa_dev=0):
                 temperature = temperature_isa(h, isa_dev_)
 
                 # Check if layer is isothermal:
-                if layer in ['tropopause', 'stratopause']:
+                if layer in ['tropopause', 'stratopause', 'mesosphere3']:
                     # XXX Posible errata en la temperatura, debe ser temp_base
                     factor = np.exp(-units.grav/coesaRair/temperature*(h-base_height))
 
@@ -185,7 +185,7 @@ def pressure_isa(height, isa_dev=0):
         temperature = temperature_isa(height, isa_dev)
 
         # Check if layer is isothermal:
-        if layer in ['tropopause', 'stratopause']:
+        if layer in ['tropopause', 'stratopause', 'mesosphere3']:
             factor = np.exp(-units.grav/coesaRair/temperature*(height-base_height))
             
         else:
@@ -239,7 +239,7 @@ def density_isa(height, isa_dev=0):
                 temperature = temperature_isa(h, isa_dev_)
 
                 # Check if layer is isothermal:
-                if layer in ['tropopause', 'stratopause']:
+                if layer in ['tropopause', 'stratopause', 'mesosphere3']:
                     factor = np.exp(-units.grav/coesaRair/temperature*(h-base_height))
 
                 else:
@@ -263,7 +263,7 @@ def density_isa(height, isa_dev=0):
         temperature = temperature_isa(height, isa_dev)
 
         # Check if layer is isothermal:
-        if layer in ['tropopause', 'stratopause']:
+        if layer in ['tropopause', 'stratopause', 'mesosphere3']:
             factor = np.exp(-units.grav/coesaRair/temperature*(height-base_height))
             
         else:
@@ -287,8 +287,8 @@ def density_state_eq(height, isa_dev=0):
     ISA density:
     -------------
     
-    International Standard Atmosphere density-altitude as a function of
-    the geopotential height.
+    International Standard Atmosphere density-altitude from the ideal gas law equation:
+        p = rho * Rair * T
 
     + Inputs:
     ---------
@@ -333,36 +333,101 @@ def density_state_eq(height, isa_dev=0):
     return density
 
 
-def height_from_temperature_isa(T, isa_dev=0, layer = None):
+def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
     """
-    """
+    height_from_temperature_isa:
+    ----------------------------
 
-    if layer is None:
-        atmos_data = pd.read_csv(file_atmos1975, sep='|')
+    Geopotential height that corresponds the the input temperature value, regarding the International
+    Standard Atmosphere.
 
-        Tisa = T - isa_dev
+    Note that for a given temperature, depending on the layer, more than one geopotential height can be
+    obtained. The output array, therefore, holds all the heights that can be obtained for a given temperature.
+    Thus, note that if the temperature value produces more than one geopotential height, an array of arrays 
+    with be returned, with as many rows as temperatures provided and as many columns as heights compatible 
+    with the temperature value.
 
-        layer_mask = np.where(atmos_data['base_temperature'].values>=Tisa)
-
-        temp_gradient = atmos_data.iloc[layer_mask[0]]['temperature_gradient']
-        base_temperature = atmos_data.iloc[layer_mask[0]]['base_temperature']
-        base_height = atmos_data.iloc[layer_mask[0]]['geopotential_height']
-        layer = atmos_data.iloc[layer_mask[0]]['atmos_layer']
-
-        height = np.zeros(np.size(temp_gradient), dtype=np.float64)
-        ii = 0
-        for temp_grad, base_temp, base_h, layer_ in zip(temp_gradient, base_temperature, base_height, layer):
-            if layer_.strip() not in ['tropopause', 'stratopause']:
-                height[ii] = (Tisa - base_temp)/temp_grad + base_h
-            ii += 1
-    else:
-        atmos_data = pd.read_csv(file_atmos1975, sep='|')
-        base_temp = atmos_data.loc[atmos_data['atmos_layer']==layer]['base_temperature'].values[0]
-        temp_grad = atmos_data.loc[atmos_data['atmos_layer']==layer]['temperature_gradient'].values[0]
-        base_h = atmos_data.loc[atmos_data['atmos_layer']==layer]['geopotential_height'].values[0]
-        Tisa = T - isa_dev
-        height = (Tisa - base_temp)/temp_grad + base_h
+    + Inputs:
+    ---------
+        temperature: ndarray or list or float or int. Temperature in [k]
+        isa_dev: float. Standard day base temperature deviation [K]
         
+    + Outputs:
+    ----------
+        height: ndarray or float. Geopotential heights corresponding to the input temperature [m]
+
+    """
+
+    # Check if temperature is array/list or discrete value:
+    if type(temperature) in [np.ndarray, list]:
+        # Array or list of temperatures:
+        isa_dev = np.zeros_like(temperature, dtype=np.float64) if isa_dev==0 else isa_dev
+        
+        height = []
+
+        for T, isa_dev_ in zip(temperature, isa_dev):
+            if type(T) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+                atmos_data = pd.read_csv(file_atmos1975, sep='|')
+
+                T_isa = T - isa_dev_
+
+                layer_mask = np.where(atmos_data['base_temperature'].values>=T_isa)
+
+                temp_gradient = atmos_data['temperature_gradient']
+                base_temperature = atmos_data['base_temperature']
+                base_height = atmos_data['geopotential_height']
+                height_limit = atmos_data['geopotential_height_limit']
+                layer = atmos_data['atmos_layer']
+        
+                height_ = []
+                for temp_grad, base_temp, base_h, layer_, hlim in zip(temp_gradient, base_temperature, base_height, layer, height_limit):
+                    if layer_.strip() not in ['tropopause', 'stratopause', 'mesosphere3']:
+                        h = (T_isa - base_temp)/temp_grad + base_h
+                        if base_h<=h<=hlim:
+                            height_.append(h)
+                        
+                height_ = np.asarray(height_[:])
+                height.append(height_)
+        height = np.asarray(height)
+        
+    elif type(temperature) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
+         # Temperature is a discrete value:
+
+        if layer is None:
+            atmos_data = pd.read_csv(file_atmos1975, sep='|')
+
+            temperature_isa = temperature - isa_dev
+
+            layer_mask = np.where(atmos_data['base_temperature'].values>=temperature_isa)
+
+            temp_gradient = atmos_data['temperature_gradient']
+            base_temperature = atmos_data['base_temperature']
+            base_height = atmos_data['geopotential_height']
+            height_limit = atmos_data['geopotential_height_limit']
+            layer = atmos_data['atmos_layer']
+
+            height = []
+            for temp_grad, base_temp, base_h, layer_, hlim in zip(temp_gradient, base_temperature, base_height, layer, height_limit):
+                if layer_.strip() not in ['tropopause', 'stratopause', 'mesosphere3']:
+                    h = (temperature_isa - base_temp)/temp_grad + base_h
+                    if base_h<=h<=hlim:
+                        height.append(h)
+
+            height = np.asarray(height)
+
+        else:
+            atmos_data = pd.read_csv(file_atmos1975, sep='|')
+            base_temp = atmos_data.loc[atmos_data['atmos_layer']==layer]['base_temperature'].values[0]
+            temp_grad = atmos_data.loc[atmos_data['atmos_layer']==layer]['temperature_gradient'].values[0]
+            base_h = atmos_data.loc[atmos_data['atmos_layer']==layer]['geopotential_height'].values[0]
+            temperature_isa = temperature - isa_dev
+            height = (temperature_isa - base_temp)/temp_grad + base_h
+        
+
+    else:
+        # If pressure is not aray, list, float, int...
+        print('Input pressure ({}) is not numeric or np.ndarray'.format(height))
+        height = np.nan
     
     return height
 
@@ -385,9 +450,10 @@ def height_from_pressure_isa(pressure, isa_dev=0):
         height: ndarray or float. Geopotential height corresponding to the input pressure [m]
 
     """
-    # Check if height is array/list or discrete value:
+
+    # Check if pressure is array/list or discrete value:
     if type(pressure) in [np.ndarray, list]:
-        # Array or list of heights:
+        # Array or list of pressure:
         isa_dev = np.zeros_like(pressure, dtype=np.float64) if isa_dev==0 else isa_dev
         
         height = np.zeros_like(pressure, dtype=np.float64)
@@ -405,7 +471,7 @@ def height_from_pressure_isa(pressure, isa_dev=0):
                 base_height = atmos_data.iloc[layer_mask[0][-1]]['geopotential_height']
                 layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer']
         
-            if layer.strip() in ['tropopause', 'stratopause']:
+            if layer.strip() in ['tropopause', 'stratopause', 'mesosphere3']:
                 h = base_height - np.log(p/base_pressure)*coesaRair/units.grav*base_temperature
 
             else:
@@ -430,7 +496,7 @@ def height_from_pressure_isa(pressure, isa_dev=0):
             base_height = atmos_data.iloc[layer_mask[0][-1]]['geopotential_height']
             layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer']
         
-        if layer.strip() in ['tropopause', 'stratopause']:
+        if layer.strip() in ['tropopause', 'stratopause', 'mesosphere3']:
             # If layer is isothermal
             h = base_height - np.log(pressure/base_pressure)*coesaRair/units.grav*base_temperature
 
@@ -445,6 +511,6 @@ def height_from_pressure_isa(pressure, isa_dev=0):
     else:
         # If pressure is not aray, list, float, int...
         print('Input pressure ({}) is not numeric or np.ndarray'.format(height))
-        pressure = np.nan
+        height = np.nan
 
     return height
