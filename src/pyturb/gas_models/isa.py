@@ -1,6 +1,33 @@
 """
+ISA: International Standard Atmosphere:
+---------------------------------------
+
+The International Standard Atmosphere stablishes a model for the temperature, 
+pressure, density and Mach number as a function of the geopotential heights.
+
+The ISA model refers to the US Atmosphere model of 1975 (COESA 1975), although 
+from 50 km on, ISA model stablishes the 1975 US Atmosphere Model as interim.
+
+Content:
+--------
+    + get_atmosdata: provides atmosphere layer information given a geopotential heights
+    + temperature_isa: ISA temperature as a function of the geopotential height
+    + pressure_isa: ISA pressure as a function of the geopotential height
+    + density_isa: ISA density as a function of the geopotential height
+    + density_state_eq: Density value from the ideal gas law. p and T are calculated 
+                        with the ISA coefficients gor a given geopotential height
+    + height_from_temperature_isa: geopotential height from the temperature assuming
+                                   ISA coefficients.
+    + height_from_pressure_isa: geopotential height from the pressure assuming ISA coefficients
+
+References:
+-----------
+- "Defining constants, equations and abbreviated tables of the 1975 U.S. Standard Atmosphere" NASA TR R-459
+- "Computational modelling of aircraft and the envirorenment" Dominic J. Diston
+
 
 MRodriguez. 2020
+
 """
 
 import pyturb.utils.units as units
@@ -8,6 +35,7 @@ from pyturb.air_model import IdealGas
 import numpy as np
 import pandas as pd
 import os
+
 
 # Directory to the 1975 COESA data:
 isa_dir = os.path.dirname(__file__) 
@@ -369,9 +397,8 @@ def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
             if type(T) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
                 atmos_data = pd.read_csv(file_atmos1975, sep='|')
 
+                # Temperature without isa deviation
                 T_isa = T - isa_dev_
-
-                layer_mask = np.where(atmos_data['base_temperature'].values>=T_isa)
 
                 temp_gradient = atmos_data['temperature_gradient']
                 base_temperature = atmos_data['base_temperature']
@@ -379,15 +406,22 @@ def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
                 height_limit = atmos_data['geopotential_height_limit']
                 layer = atmos_data['atmos_layer']
         
+                # For each layer the geopotential height is calculated
                 height_ = []
                 for temp_grad, base_temp, base_h, layer_, hlim in zip(temp_gradient, base_temperature, base_height, layer, height_limit):
                     if layer_.strip() not in ['tropopause', 'stratopause', 'mesosphere3']:
+                        # Height value:
                         h = (T_isa - base_temp)/temp_grad + base_h
+
+                        # If height value is compatible with the layer store it
                         if base_h<=h<=hlim:
                             height_.append(h)
-                        
+                
+                # Output heights for current temperature:
                 height_ = np.asarray(height_[:])
                 height.append(height_)
+        
+        # Output height array:
         height = np.asarray(height)
         
     elif type(temperature) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
@@ -398,8 +432,6 @@ def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
 
             temperature_isa = temperature - isa_dev
 
-            layer_mask = np.where(atmos_data['base_temperature'].values>=temperature_isa)
-
             temp_gradient = atmos_data['temperature_gradient']
             base_temperature = atmos_data['base_temperature']
             base_height = atmos_data['geopotential_height']
@@ -409,17 +441,26 @@ def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
             height = []
             for temp_grad, base_temp, base_h, layer_, hlim in zip(temp_gradient, base_temperature, base_height, layer, height_limit):
                 if layer_.strip() not in ['tropopause', 'stratopause', 'mesosphere3']:
+                    # Height value:
                     h = (temperature_isa - base_temp)/temp_grad + base_h
+                    
+                    # If height value is compatible with the layer store it
                     if base_h<=h<=hlim:
                         height.append(h)
 
+            # Output heights for current temperature:
             height = np.asarray(height)
 
         else:
+            # If layer is known (obtained from pressure), only one height value can be computed
             atmos_data = pd.read_csv(file_atmos1975, sep='|')
+
+            # Filtered layer data:
             base_temp = atmos_data.loc[atmos_data['atmos_layer']==layer]['base_temperature'].values[0]
             temp_grad = atmos_data.loc[atmos_data['atmos_layer']==layer]['temperature_gradient'].values[0]
             base_h = atmos_data.loc[atmos_data['atmos_layer']==layer]['geopotential_height'].values[0]
+            
+            # Height value
             temperature_isa = temperature - isa_dev
             height = (temperature_isa - base_temp)/temp_grad + base_h
         
