@@ -45,11 +45,7 @@ MRodriguez. 2020
 
 
 from numpy import pi
-
-## Constants:
-grav = 9.80665          # Gravitational acceleration [m/s^2]
-Ru = 8.314472           # Universal gas constant [J/mol/K]
-p_ref_SL = 101325       # Reference pressure at sea level [Pa]
+import pyturb.utils.constants as cts
 
 
 ## Units conversion: 
@@ -79,13 +75,13 @@ ms_to_mph = 1/mph_to_ms # Meters per second to statute miles per hour
 # Mass:
 lb_to_kg = 0.45359237   # Pounds (Avoirdupois) to kilograms
 kg_to_lb = 1/lb_to_kg   # Kilograms to Pounds (Avoirdupois)
-slug_to_kg = grav*m_to_ft*lb_to_kg # Slugs to kilograms
+slug_to_kg = cts.grav*m_to_ft*lb_to_kg # Slugs to kilograms
 kg_to_slug = 1/slug_to_kg # Kilograms to slugs
 
 
 # Force:
-kp_to_N = grav          # Kilopond to Newton
-N_to_kp = 1/grav        # Newtons to Kiloponds
+kp_to_N = cts.grav          # Kilopond to Newton
+N_to_kp = 1/cts.grav        # Newtons to Kiloponds
 lbf_to_kp = lb_to_kg    # Pound-force to kiloponds
 kp_to_lb = 1/lb_to_kg   # Kiloponds to pound-force
 lbf_to_N = lbf_to_kp*kp_to_N # Pound-force to Newtons
@@ -97,9 +93,9 @@ bar_to_Pa = 1e5         # Bar to Pascals
 Pa_to_bar = 1e-5        # Pascals to bar
 mbar_to_Pa = 1e-3*bar_to_Pa # mbar (mili bar) to Pascal
 Pa_to_mbar = 1e+3*Pa_to_bar # Pascal to mbar (mili bar)
-atm_to_Pa = p_ref_SL    # Atmospheres to Pascals
+atm_to_Pa = cts.p_ref_SL    # Atmospheres to Pascals
 Pa_to_atm = 1/atm_to_Pa # Pascals to Atmospheres
-Torr_to_Pa = p_ref_SL/760 # Torr (mmHg) to Pascals
+Torr_to_Pa = cts.p_ref_SL/760 # Torr (mmHg) to Pascals
 Pa_to_Torr = 1/Torr_to_Pa # Torr (mmHg) to Pascals
 mmHg_to_Pa = Torr_to_Pa # Torr = mmHg
 Pa_to_mmHg = Pa_to_Torr # Torr = mmHg

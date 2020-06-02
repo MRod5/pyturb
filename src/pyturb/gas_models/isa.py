@@ -31,7 +31,7 @@ MRodriguez. 2020
 """
 
 import pyturb.utils.units as units
-from pyturb.air_model import IdealGas
+import pyturb.utils.constants as cts
 import numpy as np
 import pandas as pd
 import os
@@ -42,9 +42,7 @@ isa_dir = os.path.dirname(__file__)
 file_atmos1975 = os.path.join(isa_dir, r'./atmos_layers_coesa1975.dat')
 
 # Ideal gas constant and molecular mass of air as in 1975 COESA
-coesaRu = 8.31432 # J/mol/K (universal gas constant as in COESA 1975)
-Mair = 0.0289644 # kg/mol (mean molecular mass of air as in COESA 1975)
-coesaRair = coesaRu/Mair
+coesaRair = cts.coesaRu/cts.coesaMair
 
 
 def get_atmosdata(height):
