@@ -14,6 +14,18 @@ class ThermoProperties():
         self.get_species_data()
         
         return
+        
+        
+    def __str__(self):
+        printable_thermoprop = "Species: {0}\tMg={1} g/mol\tdeltaHf_ref={2} J/mol\tdeltaHf_0K={3} J/mol\n".format(self.species, self.Mg, self.deltaHf_ref, self.deltaHf_0K)
+        for ii in range(self.temp_intervals):
+            printable_thermoprop += "-->Tinterval: [{0}:{1}] K\n".format(self.temp_range[ii,0], self.temp_range[ii,1])
+            printable_thermoprop += "   Coefficients:  order -2  |  order -1  |  order 0  |  order 1  |  order 2  |  order 3  |  order 4\n".format()
+            printable_thermoprop += "                 {0:10.3e}   {1:10.3e}  {2:10.3e}  {3:10.3e}  {4:10.3e}  {5:10.3e}  {6:10.3e}".format(*self.coefficients[ii])
+            printable_thermoprop += "\n\n"
+            
+            
+        return printable_thermoprop
 
 
     def get_species_data(self):
