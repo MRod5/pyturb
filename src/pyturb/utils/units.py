@@ -1,6 +1,6 @@
 """
 
-Universal constants and Conversion of units to and from International System of units.
+Conversion of units to and from International System of units.
 
 Content:
 --------
