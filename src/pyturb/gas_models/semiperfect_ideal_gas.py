@@ -100,9 +100,9 @@ class SemiperfectIdealGas(Gas):
         return Rg
         
     
-    def cp(self, temperature):
+    def cp_dimensionless(self, temperature):
         """
-        Heat capacity ratio at constant pressure [J/kg/K].
+        Dimensionless heat capacity ratio at constant pressure [-].
 
         As a semiperfect gas, cp is a function of the temperature. It is calculated as a
         7 coefficients polynomial:
@@ -125,22 +125,9 @@ class SemiperfectIdealGas(Gas):
                     temp_poly = np.array([temperature**(-2), temperature**(-1), 1, temperature, temperature**(2), temperature**(3), temperature**(4)])
                     cp_ = np.dot(coeffs, temp_poly)
                     
-                    # Dimensional cp_ at current temperature:
-                    cp_ = cp_ * self.Rg
         return cp_
-        
-    
-    def cv(self, temperature):
-        """
-        Heat capacity ratio at constant volume [J/kg/K]
 
-        As a semiperfect gas, cv is a function of tempeature. cv is calculated with the 
-        Mayer equation: cv(T) = cp(T) - Rg (ideal gas).
-        """
-        cv_ = self.cp(temperature) - self.Rg
-        return cv_
-    
-        
+
     def gamma(self, temperature):
         """
         Heat capacity ratio cp/cv [-].
@@ -151,6 +138,19 @@ class SemiperfectIdealGas(Gas):
         
         gamma_ = self.cp(temperature)/self.cv(temperature)
         return gamma_
+
+
+    def cp(self, temperature):
+        """
+        Heat capacity ratio at constant pressure [J/kg/K].
+
+        As a semiperfect gas, cp is a function of the temperature. It is calculated as a
+        7 coefficients polynomial:
+            cp/Rg = a1*T**(-2) + a2*T**(-1) + a3 + a4*T**(1) + a5*T**(2) + a6*T**(3) + a7*T**(4)
+        """
+
+        cp_ = self.cp_dimensionless(temperature) * self.Rg
+        return cp_
 
 
     def cp_molar(self, temperature):

@@ -47,3 +47,43 @@ h_spig = spig.cp(temp)*temp
 print(cp, pig.cp(), spig.cp(temp))
 print(h0, h_pig, h_spig)
 
+
+print('*******************************************')
+h0_molar = spig.h0_molar(temp)
+
+hf0Tref = tp.deltaHf_ref
+h_molar_ref = spig.cp_molar(298.15)*298.15
+
+H_molar_1 = hf0Tref + (h0_molar - h_molar_ref)
+H_molar_2 = hf0Tref + (spig.cp_molar(temp)*temp - h_molar_ref)
+
+print('H_molar_1=', H_molar_1)
+print('H_molar_2=', H_molar_2)
+print('h0_molar=', h0_molar)
+print('h_molar_ref=', h_molar_ref)
+print('hfoTref=', hf0Tref)
+
+
+print('+++++++++++++++++++')
+a1 = 1.009950160e+04
+a2 = -1.968275610e+02
+a3 =5.009155110e+0
+a4 = -5.761013730e-03
+a5 = 1.066859930e-05
+a6 = -7.940297970e-09
+a7 = 2.185231910e-12
+b1 = -1.767967310e+02
+
+temp = 500
+T= temp
+cp_ = (a1*T**-2 + a2 * T**-1 + a3 + a4 *T + a5 *T**2 + a6*T**3 + a7*T**4)*cts.Ru
+hid = (cp_ * T)
+h_ad = -a1*T**-2 + a2*np.log(T)/T + a3 + a4/2 * T + a5/3 * T**2 + a6/4 * T**3 + a7/5 * T**4 + b1/T
+h_re = h_ad * cts.Ru * T
+
+print(hid)
+print(h_ad, spig.h0_dimensionless(temp))
+print(h_re, spig.h0_molar(temp), pig.cp()*temp, spig.cp(temp)*temp)
+
+
+
