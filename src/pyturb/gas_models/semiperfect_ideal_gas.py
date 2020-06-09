@@ -33,6 +33,8 @@ class SemiperfectIdealGas(Gas):
         + cp: Heat capacity at constant pressure [J/kg/K]
         + cv: Heat capacity at constant volume [J/kg/K]
         + gamma: Heat capacity ratio [-]
+        + cp_molar: Molar heat capacity at constant pressure [J/mol/K]
+        + cv_molar: Molar heat capacity at constant volume [J/mol/K]
     
     When initialized, ThermoProperties is called with the selected gas species to retrieve
     the properties of the gas: Mg, deltaHf_ef, deltaHf_0K and coefficients for calculating cp(T).
@@ -147,5 +149,38 @@ class SemiperfectIdealGas(Gas):
         
         gamma_ = self.cp(temperature)/self.cv(temperature)
         return gamma_
-        
-        
+
+
+    def cp_molar(self, temperature):
+        """
+        Molar heat capacity ratio at constant pressure [J/mol/K].
+
+        As a semiperfect gas, cp is a function of the temperature. It is calculated as a
+        7 coefficients polynomial:
+            cp/Rg = a1*T**(-2) + a2*T**(-1) + a3 + a4*T**(1) + a5*T**(2) + a6*T**(3) + a7*T**(4)
+        """
+
+        cp_ = self.cp_dimensionless(temperature) * self.Ru
+        return cp_
+
+    
+    def cv(self, temperature):
+        """
+        Heat capacity ratio at constant volume [J/kg/K]
+
+        As a semiperfect gas, cv is a function of tempeature. cv is calculated with the 
+        Mayer equation: cv(T) = cp(T) - Ru (ideal gas).
+        """
+        cv_ = self.cp(temperature) - self.Rg
+        return cv_
+
+
+    def cv_molar(self, temperature):
+        """
+        Molar heat capacity ratio at constant volume [J/kg/K]
+
+        As a semiperfect gas, cv is a function of tempeature. cv is calculated with the 
+        Mayer equation: cv(T) = cp(T) - Rg (ideal gas).
+        """
+        cv_ = self.cp_molar(temperature) - self.Ru
+        return cv_

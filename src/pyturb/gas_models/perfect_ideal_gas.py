@@ -34,6 +34,8 @@ class PerfectIdealGas(Gas):
         + cp: Constant heat capacity at constant pressure [J/kg/K]
         + cv: Constant heat capacity at constant volume [J/kg/K]
         + gamma: Heat capacity ratio [-]
+        + cp_molar: Constant molar heat capacity at constant pressure [J/kg/K]
+        + cv_molar: Constant molar heat capacity at constant volume [J/kg/K]
     
     When initialized, SemiperfectIdealGas class is called to retrieve the gas species.
     The heat capacity at constant pressure is calculated as SemiperfectIdealGas.cp(T_ref)
