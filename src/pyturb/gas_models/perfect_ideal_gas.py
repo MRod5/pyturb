@@ -36,6 +36,8 @@ class PerfectIdealGas(Gas):
         + gamma: Heat capacity ratio [-]
         + cp_molar: Constant molar heat capacity at constant pressure [J/kg/K]
         + cv_molar: Constant molar heat capacity at constant volume [J/kg/K]
+        + h0_molar: Assigned molar enthalpy [J/mol] as h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref))
+        + h0: Assigned enthalpy [J/kg] as h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref))
     
     When initialized, SemiperfectIdealGas class is called to retrieve the gas species.
     The heat capacity at constant pressure is calculated as SemiperfectIdealGas.cp(T_ref)
@@ -172,3 +174,43 @@ class PerfectIdealGas(Gas):
         
         cv_ = self.cp_mol() - self.Ru
         return cv_
+
+
+    def h0_dimensionless(self, temperature=None):
+        """
+        Dimensionless assigned enthalpy:
+            h0(T) = deltaHf(T_ref)/R + (H0(T) - h0(T_ref))/R [-].
+        Dimensionless, perfect gas specific heat capacity at constant pressure is used.
+        """
+        
+        temp = self.T_ref
+        for (temp_range, coeffs) in zip(self.thermo_prop.temp_range, self.thermo_prop.coefficients):
+            if temp_range[0]<=temp<temp_range[1]:
+                    # Calculate 8 terms polynomial (non-dimensional):
+                    temp_poly = np.array([-temp**(-2), np.log(temp)/temp, 1, temp**(1)/2, temp**(2)/3, temp**(3)/4, temp**(4)/5])
+                    h0_ = np.dot(coeffs, temp_poly) + self.thermo_prop.integration_cts[0]
+                    
+        return h0_
+        
+        
+        
+    def h0(self, temperature):
+        """
+        Assigned enthalpy h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) [J/kg].
+        Perfect gas specific heat capacity at constant pressure is used.
+        """
+        
+        h_ = self.h0_dimensionless() * self.Rg * temperature
+                    
+        return h_
+    
+    
+    def h0_molar(self, temperature):
+        """
+        Assigned molar enthalpy h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) [J/mol].
+        Perfect gas specific heat capacity at constant pressure is used.
+        """
+        
+        h_ = self.h0_dimensionless() * self.Ru * temperature
+                    
+        return h_

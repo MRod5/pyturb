@@ -35,6 +35,8 @@ class SemiperfectIdealGas(Gas):
         + gamma: Heat capacity ratio [-]
         + cp_molar: Molar heat capacity at constant pressure [J/mol/K]
         + cv_molar: Molar heat capacity at constant volume [J/mol/K]
+        + h0_molar: Assigned molar enthalpy [J/mol] as h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref))
+        + h0: Assigned enthalpy [J/kg] as h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref))
     
     When initialized, ThermoProperties is called with the selected gas species to retrieve
     the properties of the gas: Mg, deltaHf_ef, deltaHf_0K and coefficients for calculating cp(T).
@@ -184,3 +186,56 @@ class SemiperfectIdealGas(Gas):
         """
         cv_ = self.cp_molar(temperature) - self.Ru
         return cv_
+
+
+    def h0_dimensionless(self, temperature):
+        """
+        Dimensionless assigned enthalpy:
+            h0(T)/R = deltaHf(T_ref)/R + (H0(T) - h0(T_ref))/R [-].
+        Dimensionless, semiperfect gas specific heat capacity at constant pressure 
+        is used.
+        """
+        
+        # Check if temperature is out of range for the current gas species:
+        tmin = np.min(self.thermo_prop.temp_range)
+        tmax = np.max(self.thermo_prop.temp_range)
+
+        if tmin>temperature or tmax<temperature:
+            raise ValueError("Gas temperature ({0}K) out of implemented limits [{1},{2}]K".format(temperature, tmin, tmax))
+        else:
+            for (temp_range, coeffs, integ_cts) in zip(self.thermo_prop.temp_range, self.thermo_prop.coefficients, self.thermo_prop.integration_cts):
+                # For all the temperature intervals of the gas species, pick the correct one:
+                # min_T_interval <= temperature max_T_interval
+
+                if temp_range[0]<=temperature<temp_range[1]:
+                    # Calculate 8 terms polynomial (non-dimensional):
+                    temp_poly = np.array([-temperature**(-2), np.log(temperature)/temperature, 1, temperature**(1)/2, temperature**(2)/3, temperature**(3)/4, temperature**(4)/5])
+                    h0_ = np.dot(coeffs, temp_poly) + integ_cts[0] / temperature
+
+            return h0_
+        
+        
+    def h0(self, temperature):
+        """
+        Assigned enthalpy:
+        h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) [J/kg].
+       
+        """
+            
+        h0_ = self.h0_dimensionless(temperature) * self.Rg * temperature
+            
+        return h0_
+            
+        
+    def h0_molar(self, temperature):
+        """
+        assigned molar enthalpy:
+            h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) [J/mol].
+
+        """
+            
+        h0_ = self.h0_dimensionless(temperature) * self.Ru * temperature
+            
+        return h0_
+    
+    
