@@ -14,10 +14,10 @@ MRodriguez. 2020
 
 """
 
+import numpy as np
 import pyturb.utils.constants as cts
 from pyturb.gas_models.gas import Gas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
-from pyturb.gas_models.thermo_properties import ThermoProperties
 
 
 class PerfectIdealGas(Gas):
@@ -65,6 +65,7 @@ class PerfectIdealGas(Gas):
         # Reference temperature and gas species
         self.T_ref = cts.T_ref
         self.__gas_species = species
+        
         return
         
     
@@ -75,6 +76,7 @@ class PerfectIdealGas(Gas):
         molecules and mixes considered in "NASA Glenn Coefficients for Calculating Thermodynamic
         Properties of Individual Species".
         """
+        
         return self.__gas_species
         
 
@@ -83,6 +85,7 @@ class PerfectIdealGas(Gas):
         """
         Get the Ideal Gas Law constant Ru [J/mol/K]
         """
+        
         Ru = cts.Ru
         return Ru
         
@@ -92,32 +95,23 @@ class PerfectIdealGas(Gas):
         """
         Get the Individual Gas constant Rg =  Ru/Mg [J/kg/K]
         """
+        
         Rg = self.Ru/self.thermo_prop.Mg*1e3
         return Rg
         
-    
-    def cp(self, temperature=None):
+        
+    def cp_dimensionless(self, temperature=None):
         """
-        Heat capacity ratio at constant pressure [J/kg/K].
+        Dimensionless heat capacity ratio at constant pressure [-].
 
         As a perfect gas, cp is considered invariant with temperature. It is calculated as a
         semi-perfect gas (which means cp(T)) at T_ref temperature for any temperature.
         """
-        cp_ = self.__from_semiperfect_gas.cp(self.T_ref)
+        
+        cp_ = self.__from_semiperfect_gas.cp_dimensionless(self.T_ref)
         return cp_
-        
-    
-    def cv(self, temperature=None):
-        """
-        Heat capacity ratio at constant volume [J/kg/K]
 
-        As an ideal gas, cv is invariant with tempeature. cv is calculated with the 
-        Mayer equation: cv = cp - Rg.
-        """
-        cv_ = self.cp(self.T_ref) - self.Rg
-        return cv_
-    
-        
+
     def gamma(self, temperature=None):
         """
         Heat capacity ratio cp/cv [-].
@@ -125,7 +119,54 @@ class PerfectIdealGas(Gas):
         As an ideal gas, gamma is considered invariant with temperature. gamma is calculated
         as gamma = cp/cv.
         """
+        
         gamma_ = self.cp(self.T_ref)/self.cv(self.T_ref)
         return gamma_
+
+
+    def cp(self, temperature=None):
+        """
+        Heat capacity ratio at constant pressure [J/kg/K].
+
+        As a perfect gas, cp is considered invariant with temperature. It is calculated as a
+        semi-perfect gas (which means cp(T)) at T_ref temperature for any temperature.
+        """
         
+        cp_ = self.cp_dimensionless()*self.Rg
+        return cp_
+     
+
+    def cv(self, temperature=None):
+        """
+        Heat capacity ratio at constant volume [J/kg/K]
+
+        As an ideal gas, cv is invariant with tempeature. cv is calculated with the 
+        Mayer equation: cv = cp - Rg.
+        """
         
+        cv_ = self.cp() - self.Rg
+        return cv_
+    
+        
+    def cp_molar(self, temperature=None):
+        """
+        Molar heat capacity ratio at constant pressure [J/mol/K].
+
+        As a perfect gas, cp is considered invariant with temperature. It is calculated as a
+        semi-perfect gas (which means cp(T)) at T_ref temperature for any temperature.
+        """
+        
+        cp_ = self.cp_dimensionless()*self.Ru
+        return cp_
+     
+
+    def cv_molar(self, temperature=None):
+        """
+        Molar heat capacity ratio at constant volume [J/mol/K]
+
+        As an ideal gas, cv is invariant with tempeature. cv is calculated with the 
+        Mayer equation: cv = cp - Ru.
+        """
+        
+        cv_ = self.cp_mol() - self.Ru
+        return cv_
