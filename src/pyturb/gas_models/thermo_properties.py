@@ -1,4 +1,12 @@
 """
+Thermodynamic properties:
+-------------------------
+
+Thermodynamic properties of different species (NASA Glenn coefficients).
+Creates an object with
+    
+    
+MRodriguez. 2020
 
 """
 
@@ -58,6 +66,8 @@ class ThermoProperties():
 
                     self.temp_range = np.zeros([self.temp_intervals, 2])
                     self.coefficients = np.zeros([self.temp_intervals, 7])
+                    self.integration_cts = np.zeros([self.temp_intervals, 2])
+                    
                     for ii in range(self.temp_intervals):
                         temprange_data = nasa_file.readline()
                         coeffs_line_1 = nasa_file.readline()
@@ -71,6 +81,9 @@ class ThermoProperties():
                                         float(coeffs_line_1[32:48].replace('D','E')), float(coeffs_line_1[48:64].replace('D','E')),
                                         float(coeffs_line_1[64:80].replace('D','E')), float(coeffs_line_2[0:16].replace('D','E')),
                                         float(coeffs_line_2[16:32].replace('D','E'))]
+                        
+                        self.integration_cts[ii,:] = [float(coeffs_line_2[48:64].replace('D','E')), float(coeffs_line_2[64:80].replace('D','E'))]
+                        
 
                     self.deltaHf_0K = float(temprange_data[65:79])
                     keep_searching = False
