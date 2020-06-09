@@ -25,7 +25,11 @@ class Gas(object):
     + Methods:
         cp: Heat capacity at constant pressure [J/kg/K]
         cv: Heat capacity at constant volume [J/kg/K]
+        cp_molar: Molar heat capacity at constant pressure [J/kg/K]
+        cv_molar: Molar heat capacity at constant volume [J/kg/K]
         gamma: Heat capacity ratio [-]
+        h0: Assigned enthalpy [J/kg]
+        h0_molar: Assigned molar enthalpy [J/mol]
 
     """
 
@@ -81,3 +85,34 @@ class Gas(object):
         """
         raise NotImplementedError
 
+
+    @abstractmethod
+    def cp_molar(self, temperature):
+        """
+        Molar heat capacity ratio at constant pressure [J/mol/K]
+        """
+        raise NotImplementedError
+
+
+    @abstractmethod
+    def cv_molar(self, temperature):
+        """
+        Molar heat capacity ratio at constant volume [J/mol/K]
+        """
+        raise NotImplementedError
+        
+    
+    @abstractmethod
+    def h0(self, temperature):
+        """
+        Assigned enthalpy h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) [J/kg]
+        """
+        raise NotImplementedError
+    
+    
+    @abstractmethod
+    def h0_molar(self, temperature):
+        """
+        Assigned molar enthalpy h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) [J/mol]
+        """
+        raise NotImplementedError
