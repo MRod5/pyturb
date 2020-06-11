@@ -53,9 +53,11 @@ class IsentropicFlow(object):
 
     def __init__(self, fluid):
         if not(isinstance(fluid, PerfectIdealGas) or isinstance(fluid, SemiperfectIdealGas)):
+            # Check the flow is a Perfect or a Semiperfect gas fom pyturb
             raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas. Instead received {}".format(fluid))
         
-        for attr in ['cp', 'gamma']:
+        for attr in ['cp', 'gamma', 'Rg']:
+            # Explicitly check for needed attributes
             if not hasattr(fluid, attr):
                 raise AttributeError("Attribute {} not found in fluid object".format(attr))
 
@@ -77,6 +79,8 @@ class IsentropicFlow(object):
         """
 
         if not 0<static_temperature<6000:
+            # Avoid negative temperatures
+            # TODO: Maybe allow unit change to international system
             raise ValueError("Static temperature {}K out of bounds [0-6000]K".format(static_temperature))
         else:
             T = static_temperature
@@ -89,17 +93,18 @@ class IsentropicFlow(object):
     def mach_number(self, velocity, static_temperature):
         """        
         Calculates the Mach number for a local static temperature condition and a given fluid velocity
-        
+
         Inputs:
         -------
             velocity: float. Fluid velocity [m/s]
             static_temperature: float. Static temperature of the fluid [K]
-        
+
         Outputs:
         --------
             mach: float. Mach number of the fluid [dimensionless]
-            
+
         """
+
         mach = velocity / self.sound_speed(static_temperature)
         return mach
 
@@ -125,10 +130,13 @@ class IsentropicFlow(object):
 
         if static_temperature is None:
             if not isinstance(self.fluid, PerfectIdealGas):
+                # If Semiperfect gas a temperature must be provided
                 raise ValueError("A valid static temperature must be provided")
             else:
+                # Gamma for a Perfect gas
                 gamma = self.fluid.gamma()
         else:
+            # Gamma for semiperfect gas
             gamma = self.fluid.gamma(static_temperature)
         
         if 0>mach:
@@ -158,6 +166,8 @@ class IsentropicFlow(object):
         """
 
         if not 0<static_temperature<6000:
+            # Avoid negative temperatures
+            # TODO: Maybe allow unit change to international system
             raise ValueError("Static temperature {}K out of bounds [0-6000]K".format(static_temperature))
         else:
             T = static_temperature
@@ -190,6 +200,8 @@ class IsentropicFlow(object):
         """
 
         if not 0<static_temperature<6000:
+            # Avoid negative temperatures
+            # TODO: Maybe allow unit change to international system
             raise ValueError("Static temperature {}K out of bounds [0-6000]K".format(static_temperature))
         else:
             T = static_temperature
@@ -224,19 +236,26 @@ class IsentropicFlow(object):
 
         if static_temperature is None:
             if not isinstance(self.fluid, PerfectIdealGas):
+                # If Semiperfect gas a temperature must be provided
                 raise ValueError("A valid static temperature must be provided")
             else:
+                # Gamma for a Perfect gas
                 gamma = self.fluid.gamma()
                 T = None
         else:
+            # Gamma for a Semiperfect gas
             gamma = self.fluid.gamma(static_temperature)
 
             if not 0<static_temperature<6000:
+                # Avoid negative temperatures
+                # TODO: Maybe allow unit change to international system
                 raise ValueError("Static temperature {}K out of bounds [0-6000]K".format(static_temperature))
             else:
                 T = static_temperature
 
         if not 0<static_pressure:
+            # Avoid negative pressure
+            # TODO: Maybe allow unit change to international system
             raise ValueError("Static pressure {}Pa cannot be negative".format(static_pressure))
         else:
             p = static_pressure
@@ -264,6 +283,7 @@ class IsentropicFlow(object):
         """
 
         if not 0<static_pressure:
+            # Avoid negative pressure
             raise ValueError("Static pressure {}Pa cannot be negative".format(static_pressure))
         else:
             p = static_pressure
@@ -296,6 +316,7 @@ class IsentropicFlow(object):
         """
 
         if not 0<static_density:
+            # Avoid negative density
             raise ValueError("Static density {}kg/m**3 cannot be negative".format(static_density))
         else:
             rho = static_density
@@ -332,13 +353,17 @@ class IsentropicFlow(object):
 
         if static_temperature is None:
             if not isinstance(self.fluid, PerfectIdealGas):
+                # Gamma for a Perfect gas
                 raise ValueError("A valid static temperature must be provided")
             else:
+                # If Perfect gas a temperature must be provided
                 gamma = self.fluid.gamma()
         else:
+            # If Semiperfect gas a temperature must be provided
             gamma = self.fluid.gamma(static_temperature)
 
         if not 0<static_pressure:
+            # Avoid negative pressure
             raise ValueError("Static pressure {}Pa cannot be negative".format(static_pressure))
         else:
             p = static_pressure
@@ -365,8 +390,10 @@ class IsentropicFlow(object):
         """
 
         if not (0<static_temperature<6000 and 0<stagnation_temperature<6000):
+            # Avoid negative temperatures
             raise ValueError("A valid temperatures must be provided.")
         elif not stagnation_temperature>static_temperature:
+            # Avoid negative sqrt
             raise ValueError("Stagnation temperature must be greater than static temperature.")
         else:
             T = static_temperature
@@ -396,6 +423,7 @@ class IsentropicFlow(object):
         """
 
         if not 0<static_temperature<6000:
+            # Avoid negative temperature
             raise ValueError("Static temperature {}K out of bounds [0-6000]K".format(static_temperature))
         else:
             T = static_temperature
@@ -433,17 +461,21 @@ class IsentropicFlow(object):
             if not isinstance(self.fluid, PerfectIdealGas):
                 raise ValueError("A valid static temperature must be provided")
             else:
+                # If Perfect gas a temperature must be provided
                 gamma = self.fluid.gamma()
                 T = None
         else:
+            # If Semiperfect gas a temperature must be provided
             gamma = self.fluid.gamma(static_temperature)
 
             if not 0<static_temperature<6000:
+                # Avoid negative temperatures
                 raise ValueError("Static temperature {}K out of bounds [0-6000]K".format(static_temperature))
             else:
                 T = static_temperature
 
         if not 0<static_density:
+            # Avoid negative density
             raise ValueError("Static density {}kg/m**3 cannot be negative".format(static_density))
         else:
             rho = static_density
