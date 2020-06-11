@@ -30,3 +30,44 @@ class IsentropicFlow(object):
 
         self.fluid = fluid
         return
+
+
+    def sound_speed(self, static_temperature):
+        """
+        Local speed of sound, assuming adiabatic flow.
+         
+        Inputs:
+        -------
+            + static_temperature: float. Static temperature of the gas [K]
+            
+        Outputs:
+        --------
+            + a: speed of sound at a given static temperature, gamma and cp [m/s]
+        """
+
+        if not 0<static_temperature<6000:
+            raise ValueError("Static temperature {}K out of bounds [0-6000]K".format(static_temperature))
+        else:
+            T = static_temperature
+
+        a = np.sqrt(self.fluid.gamma(T) * self.fluid.Rg * T)
+
+        return a
+
+
+    def mach_number(self, velocity, static_temperature):
+        """        
+        Calculates the Mach number for a local static temperature condition and a given fluid velocity
+        
+        Inputs:
+        -------
+            velocity: float. Fluid velocity [m/s]
+            static_temperature: float. Static temperature of the fluid [K]
+        
+        Outputs:
+        --------
+            mach: float. Mach number of the fluid [dimensionless]
+            
+        """
+        mach = velocity / self.sound_speed(static_temperature)
+        return mach
