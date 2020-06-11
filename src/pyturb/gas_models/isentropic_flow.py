@@ -2,7 +2,7 @@
 IsentropicFlow class:
 ---------------------
 
-Isentropic flow relations
+Isentropic flow relations given an Ideal Gas.
 
 
 MRodriguez 2020
@@ -16,7 +16,38 @@ import numpy as np
 
 class IsentropicFlow(object):
     """
-    Isentropic flow relations.
+    IsentropicFlow:
+    ---------------
+
+    Isentropic flow relations for an Ideal Gas, both Perfect (constant cp, cv and
+    gamma) or Semiperfect (cp, cv, gamma as a function of temperature).
+
+    IsentropicFlow can inherit from PerfectIdealGas or SemiperfectIdealGas.
+
+    Content:
+    --------
+        + sound_speed: Local speed of sound, assuming adiabatic flow
+        + mach_number: Mach number for a local static temperature and velocity
+        + stagnation_static_relation: Relation between stagnation temperature and
+            static temperature as a function of Mach: Tt/T = 1+(gamma-1)/2*M**2
+        + stag_temp_from_mach: Stagnation temperature given the stagnation to
+            static relation and the static temperature: Tt = T * (Tt/T)
+        + stag_temp_from_vel: Stagnation temperature given velocity of the flow
+            Tt = T + v**2/cp/2
+        + stag_pressure_from_mach: Stagnation pressure given the stagnation to
+            static relation and the static pressure: pt = p * (Tt/T)**(gamma/(gamma-1))
+        + impact_pressure_from_mach: Difference between the stagnation pressure and
+            the static pressure.
+        + dynamic_pressure: Dynamic pressure from static density and flow velocity.
+            If M<0.3 incompressible flow may be consideed and pt = p + qi
+        + dynamic_pressure_from_statpress: Dynamic pressure from static pressue and
+            Mach number.
+        + vel_from_stag_temp: Velocity of the flow given the stagnation and static
+            temperatures
+        + vel_from_mach: Veocity of the flow given the Mach number and the static temperature
+        + stag_density_from_mach: Stagnation density given the stagnation to
+            static relation and the static density: rhot = rho * (Tt/T)**(1/(gamma-1))
+
 
     """
 

@@ -199,10 +199,10 @@ def pressure_isa(height, isa_dev=0):
                 # Check if layer is isothermal:
                 if layer in ['tropopause', 'stratopause', 'mesosphere3']:
                     # XXX Posible errata en la temperatura, debe ser temp_base
-                    factor = np.exp(-units.grav/coesaRair/temperature*(h-base_height))
+                    factor = np.exp(-cts.grav/coesaRair/temperature*(h-base_height))
 
                 else:
-                    factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
+                    factor = (temperature/base_temperature)**(cts.grav/coesaRair/(-temp_gradient))
 
                 # Get pressure value
                 pressure[ii] = base_pressure * factor
@@ -223,10 +223,10 @@ def pressure_isa(height, isa_dev=0):
 
         # Check if layer is isothermal:
         if layer in ['tropopause', 'stratopause', 'mesosphere3']:
-            factor = np.exp(-units.grav/coesaRair/temperature*(height-base_height))
+            factor = np.exp(-cts.grav/coesaRair/temperature*(height-base_height))
             
         else:
-            factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
+            factor = (temperature/base_temperature)**(cts.grav/coesaRair/(-temp_gradient))
 
         # Get pressure value
         pressure = base_pressure * factor
@@ -278,10 +278,10 @@ def density_isa(height, isa_dev=0):
 
                 # Check if layer is isothermal:
                 if layer in ['tropopause', 'stratopause', 'mesosphere3']:
-                    factor = np.exp(-units.grav/coesaRair/temperature*(h-base_height))
+                    factor = np.exp(-cts.grav/coesaRair/temperature*(h-base_height))
 
                 else:
-                    factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
+                    factor = (temperature/base_temperature)**(cts.grav/coesaRair/(-temp_gradient))
 
                 # Get density value
                 density[ii] = base_density * factor
@@ -302,10 +302,10 @@ def density_isa(height, isa_dev=0):
 
         # Check if layer is isothermal:
         if layer in ['tropopause', 'stratopause', 'mesosphere3']:
-            factor = np.exp(-units.grav/coesaRair/temperature*(height-base_height))
+            factor = np.exp(-cts.grav/coesaRair/temperature*(height-base_height))
             
         else:
-            factor = (temperature/base_temperature)**(units.grav/coesaRair/(-temp_gradient))
+            factor = (temperature/base_temperature)**(cts.grav/coesaRair/(-temp_gradient))
 
         # Get density value
         density = base_density * factor
@@ -523,10 +523,10 @@ def height_from_pressure_isa(pressure, isa_dev=0):
                 layer = atmos_data.iloc[layer_mask[0][-1]]['atmos_layer']
         
             if layer.strip() in ['tropopause', 'stratopause', 'mesosphere3']:
-                h = base_height - np.log(p/base_pressure)*coesaRair/units.grav*base_temperature
+                h = base_height - np.log(p/base_pressure)*coesaRair/cts.grav*base_temperature
 
             else:
-                Tratio = (p/base_pressure)**(-temp_gradient*coesaRair/units.grav)
+                Tratio = (p/base_pressure)**(-temp_gradient*coesaRair/cts.grav)
                 T = Tratio * base_temperature
                 h = height_from_temperature_isa(T, isa_dev_, layer)
         
@@ -549,11 +549,11 @@ def height_from_pressure_isa(pressure, isa_dev=0):
         
         if layer.strip() in ['tropopause', 'stratopause', 'mesosphere3']:
             # If layer is isothermal
-            h = base_height - np.log(pressure/base_pressure)*coesaRair/units.grav*base_temperature
+            h = base_height - np.log(pressure/base_pressure)*coesaRair/cts.grav*base_temperature
 
         else:
             # If temperature gradient is not zero:
-            Tratio = (pressure/base_pressure)**(-temp_gradient*coesaRair/units.grav)
+            Tratio = (pressure/base_pressure)**(-temp_gradient*coesaRair/cts.grav)
             T = Tratio * base_temperature
             h = height_from_temperature_isa(T, isa_dev, layer)
         
