@@ -7,7 +7,7 @@ from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
 
 
 
-class Fluid(object):
+class ControlVolume(object):
     """
     """
     def __init__(self, fluid):

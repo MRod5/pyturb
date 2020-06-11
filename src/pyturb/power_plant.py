@@ -1,6 +1,6 @@
-from pyturb.fluid import Fluid
+from pyturb.control_volume import ControlVolume
 
-class Intake(Fluid):
+class Intake(ControlVolume):
     """
     """
     def __init__(self, stage, fluid):
@@ -20,7 +20,7 @@ class Intake(Fluid):
         return
         
 
-class Combustor():
+class Combustor(ControlVolume):
     """
     """
     def __init__(self, stage):
@@ -29,7 +29,7 @@ class Combustor():
         self.stage = stage
         return
         
+        
     def solve(self):
-#            print('intake?', super().intake)
         print('solve combustor')
         return
