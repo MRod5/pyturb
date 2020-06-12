@@ -551,6 +551,89 @@ class IsentropicFlow(object):
         return T
 
 
+    def stat_temp_from_vel(self, vel, stagnation_temperature, mean_cp='False'):
+        """
+        Calculates the static temperature of an isentropic flow given the
+        velocity and the stagnation temperature of the flow.
+
+        The static temperature from the stagnation temperature and the velocity is 
+        obtained with:
+            ht = h + 0.5*v**2 --> T = (cp(Tt)*Tt)/cp(T) + 0.5*v**2/cp(T)
+        
+        A simplification may be done assuming the cp(Tt)/cp(T) is almost 1. This 
+        assumption is equivalent to calculate the static temperature with
+        stag_temp_from_mach.
+
+        In any case the solution is iterated to obtained the cp(T) corresponding to
+        the static temperature.
+
+
+        Inputs:
+        -------
+            vel: float. Velocity of the fluid [m/s]
+            stagnation_temperature: float. Stagnation temperature of the gas [K]
+            mean_cp: str. By default "False". If False: a simplified T=Tt-0.5*v**2/cp(T)
+                if calculated. If true T = (cp(Tt)*Tt)/cp(T) + 0.5*v**2/cp(T).
+
+        Outputs:
+        --------
+            T: float. static temperature [K]
+
+        """
+    
+        if not 0<stagnation_temperature<6000:
+            # Avoid negative temperature
+            raise ValueError("Stagnation temperature {}K out of bounds [0-6000]K".format(stagnation_temperature))
+        else:
+            Tt = stagnation_temperature
+
+        # cp value at Tt:
+        if mean_cp.lower()=='false':
+            use_mean_cp = False
+        elif mean_cp.lower()=='true':
+            cpt = self.fluid.cp(Tt)
+            use_mean_cp = True
+        else:
+            warnings.warn('Unknown mean_cp option: {}. Changing to mean_cp=False'.format(mean_cp), UserWarning)
+            use_mean_cp = False
+            
+
+        ## Iterate solution:
+        # Iteration flag and counter
+        iterate = True
+        niter = 0
+
+        # Assume static and stagnation temperatures initialliy have the same value to get a valid gamma(T) value
+        T = Tt
+
+        # Iterator:
+        while iterate:
+            niter += 1
+
+            # Store old T value and get a new one assuming gamma(T) is valid
+            T_0 = T
+
+            cp0 = self.fluid.cp(T)
+
+            if use_mean_cp:
+                T = cpt/cp0*Tt - 0.5*vel**2/cp0
+            else:
+                T = Tt - 0.5*vel**2/cp0
+
+            # Get residual between old and new value of T
+            residual = (T-T_0)/T_0
+
+            if np.abs(residual)<self.iter_tolerance:
+                # If difference below tolerance, T is a valid solution
+                iterate = False
+            elif niter==self.niter_max:
+                # If maximum iterations are reached, a warning is displayed bi
+                warnings.warn("Warning: Maximum iterations ({}) exceeded at stat_temp_from_vel (pyturb.gas_models.isentropic_flow)".format(self.niter_max), UserWarning)
+                iterate = False
+
+        return T
+
+
     def stat_pressure_from_mach(self, mach, stagnation_pressure, stagnation_temperature=None):
         """
         Calculates the static pressure of an isentropic flow given the
