@@ -11,7 +11,9 @@ MRodriguez 2020
 
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
+import pyturb.utils.constants as cts
 import numpy as np
+import warnings
 
 
 class IsentropicFlow(object):
@@ -547,3 +549,89 @@ class IsentropicFlow(object):
                 iterate = False
 
         return T
+
+
+    def stat_pressure_from_mach(self, mach, stagnation_pressure, stagnation_temperature=None):
+        """
+        Calculates the static pressure of an isentropic flow given the
+        Mach number and the stagnation pressure of the flow.
+
+        The solution is iterated to obtained the gamma(T) value correspondent to
+        the static_temperature.
+        
+        Inputs:
+        -------
+            mach: float. Mach number of the fluid [dimensionless]
+            stagnation_pressure: float. Stagnation pressure of the gas [Pa]
+            stagnation_temperature: float. Stagnation temperature of the gas [K]
+
+
+        Outputs:
+        --------
+            p: float. static pressure [Pa]
+
+        """
+
+        if isinstance(self.fluid, PerfectIdealGas):
+            # Perfect gas
+            is_perfect_gas = True
+            gamma = self.fluid.gamma()
+        else:
+            # Semiperfect gas
+            is_perfect_gas = False
+            if stagnation_temperature is None:
+                raise ValueError("A valid stagnation temperature must be provided")
+
+            else:
+                if not 0<stagnation_temperature<6000:
+                    # Avoid negative temperature
+                    raise ValueError("Stagnation temperature {}K out of bounds [0-6000]K".format(stagnation_temperature))
+                else:
+                    Tt = stagnation_temperature
+
+        if not 0<stagnation_pressure:
+            # Avoid negative pressure
+            raise ValueError("Static pressure {}Pa cannot be negative".format(stagnation_pressure))
+        else:
+            pt = stagnation_pressure
+
+
+        if is_perfect_gas:
+            # Perfect gas solution:
+            Tt_T = self.stagnation_static_rel(mach=mach, static_temperature=None)
+            p = pt/(Tt_T**(gamma/(gamma-1)))
+        else:
+
+            ## Iterate solution:
+            # Iteration flag and counter
+            iterate = True
+            niter = 0
+
+            # Assume static and stagnation temperatures initialliy have the same value to get a valid gamma(T) value
+            T = Tt
+            p = pt
+
+            # Iterator:
+            while iterate:
+                niter += 1
+
+                # Store old T value and get a new one assuming gamma(T) is valid
+                p_0 = p
+                Tt_T = self.stagnation_static_rel(mach=mach, static_temperature=T)
+                T = Tt/Tt_T
+                gamma = self.fluid.gamma(T)
+                p = pt/(Tt_T**(gamma/(gamma-1)))
+
+                # Get residual between old and new value of T
+                residual = (p-p_0)/p_0
+
+                if np.abs(residual)<self.iter_tolerance:
+                    # If difference below tolerance, T is a valid solution
+                    iterate = False
+                elif niter==self.niter_max:
+                    # If maximum iterations are reached, a warning is displayed bi
+                    warnings.warn("Warning: Maximum iterations ({}) exceeded at stat_press_from_mach (pyturb.gas_models.isentropic_flow)".format(self.niter_max), UserWarning)
+                    iterate = False
+
+        return p
+
