@@ -62,6 +62,11 @@ class IsentropicFlow(object):
                 raise AttributeError("Attribute {} not found in fluid object".format(attr))
 
         self.fluid = fluid
+
+        # Iterator conditions
+        self.niter_max = 1e2
+        self.iter_tolerance = 1e-6
+
         return
 
 
@@ -485,4 +490,60 @@ class IsentropicFlow(object):
 
         return rhot
 
+
+    def stat_temp_from_mach(self, mach, stagnation_temperature):
+        """
+        Calculates the static temperature of an isentropic flow given the
+        Mach number and the stagnation temperature of the flow.
+
+        The solution is iterated to obtained the gamma(T) value correspondent to
+        the solution static_temperature.
+        
+        Inputs:
+        -------
+            mach: float. Mach number of the fluid [dimensionless]
+            stagnation_temperature: float. Stagnation temperature of the gas [K]
+
+
+        Outputs:
+        --------
+            T: float. static temperature [K]
+
+        """
     
+        if not 0<stagnation_temperature<6000:
+            # Avoid negative temperature
+            raise ValueError("Stagnation temperature {}K out of bounds [0-6000]K".format(stagnation_temperature))
+        else:
+            Tt = stagnation_temperature
+
+
+        ## Iterate solution:
+        # Iteration flag and counter
+        iterate = True
+        niter = 0
+
+        # Assume static and stagnation temperatures initialliy have the same value to get a valid gamma(T) value
+        T = Tt
+
+        # Iterator:
+        while iterate:
+            niter += 1
+
+            # Store old T value and get a new one assuming gamma(T) is valid
+            T_0 = T
+            Tt_T = self.stagnation_static_rel(mach=mach, static_temperature=T)
+            T = Tt/Tt_T
+
+            # Get residual between old and new value of T
+            residual = (T-T_0)/T_0
+
+            if np.abs(residual)<self.iter_tolerance:
+                # If difference below tolerance, T is a valid solution
+                iterate = False
+            elif niter==self.niter_max:
+                # If maximum iterations are reached, a warning is displayed bi
+                warnings.warn("Warning: Maximum iterations ({}) exceeded at stat_temp_from_mach (pyturb.gas_models.isentropic_flow)".format(self.niter_max), UserWarning)
+                iterate = False
+
+        return T
