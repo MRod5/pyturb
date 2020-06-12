@@ -8,6 +8,7 @@ import pyturb.gas_models.isa as isa
 air = PerfectIdealGas('Air')
 isent = IsentropicFlow(air)
 
+
 # Perfect gas
 print('----------------------------PerfectGas----------------------------')
 T = 288.15 #K
@@ -28,7 +29,8 @@ print('qi=', isent.dynamic_pressure(v, rho))
 print('v=', isent.vel_from_stag_temp(isent.stag_temp_from_mach(M, T), T))
 print('v=', isent.vel_from_mach(M, T))
 print('rho=', rho, 'rhot=', isent.stag_density_from_mach(M, rho))
-
+print('T=', isent.stat_temp_from_mach(M, isent.stag_temp_from_mach(M, T)))
+print('p=', isent.stat_pressure_from_mach(M, isent.stag_pressure_from_mach(M, p)))
 
 ## Semiperfect gas
 print('--------------------------SemiperfectGas--------------------------')
@@ -45,14 +47,22 @@ v = 500 # m/s
 
 a = isent.sound_speed(T)
 M = isent.mach_number(v, T)
-print('M=', M, 'a=', a)
+print('M=', M, 'a=', a, 'T=', T, 'p=', p)
 
-print('Tt_T=', isent.stagnation_static_rel(M, T))
-print('Tt=', isent.stag_temp_from_mach(M, T))
+Tt_T = isent.stagnation_static_rel(M, T)
+Tt = isent.stag_temp_from_mach(M, T)
+pt = isent.stag_pressure_from_mach(M, p, T)
+print('Tt_T=', Tt_T)
+print('Tt=', Tt)
 print('Tt=', isent.stag_temp_from_vel(v, T))
-print('pt=', isent.stag_pressure_from_mach(M, p, T))
+print('pt=', pt)
 print('qi=', isent.impact_pressure_from_mach(M, p, T))
 print('qi=', isent.dynamic_pressure(v, rho))
 print('v=', isent.vel_from_stag_temp(isent.stag_temp_from_mach(M, T), T))
 print('v=', isent.vel_from_mach(M, T))
 print('rho=', rho, 'rhot=', isent.stag_density_from_mach(M, rho, T))
+print('T=', isent.stat_temp_from_mach(M, Tt))
+print('T=', isent.stat_temp_from_vel(v, Tt, 'True'))
+print('T=', isent.stat_temp_from_vel(v, Tt, 'False'))
+print('p=', isent.stat_pressure_from_mach(M, pt, Tt))
+

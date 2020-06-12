@@ -49,7 +49,15 @@ class IsentropicFlow(object):
         + vel_from_mach: Veocity of the flow given the Mach number and the static temperature
         + stag_density_from_mach: Stagnation density given the stagnation to
             static relation and the static density: rhot = rho * (Tt/T)**(1/(gamma-1))
-
+        +stat_temp_from_mach: Static temperature from stagnation temperature and Mach
+            number. The solution is iterated if a semiperfect gas is selected (the cp and 
+            gamma values depend on the solution).
+        +stat_temp_from_vel: Static temperature from stagnation temperature and flow
+            velocity. The solution is iterated if a semiperfect gas is selected (the cp and 
+            gamma values depend on the solution).
+        +stat_pressure_from_mach: Static pressure from stagnation pressure and flow
+            velocity. The solution is iterated if a semiperfect gas is selected (the cp and 
+            gamma values depend on the static temperature).
 
     """
 
