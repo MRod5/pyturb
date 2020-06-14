@@ -31,4 +31,4 @@ class Nozzle(ControlVolume):
         print('solve nozzle')
         self.solved = True
         print(self.fluid.cp())
-        return
+        return11

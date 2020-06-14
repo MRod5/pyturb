@@ -23,8 +23,22 @@ class Intake(ControlVolume):
         self.stage = stage
         super().__init__(fluid)
             
-        return
+        return None
         
+    
+    def inputs(self, pe, Te, ve, adiab_efficiency=1):
+        """
+        Set basic inputs of a generic intake (diffuser):
+            + Static pressure, static temperature and flow velocity at the entrance
+            + Adiabatic efficiency of the diffuser
+        """
+
+        self.p_e = pe
+        self.T_e = Te
+        self.vel_e = ve
+        
+        return 
+
     def solve(self):
         """
         """
