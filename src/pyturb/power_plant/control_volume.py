@@ -2,9 +2,14 @@
 Control Volume:
 ---------------
 
-Class for a generic control volume, with static thermoduynamic properties, stagnation
+Class for a generic control volume, with static thermodynamic properties, stagnation
 properties, Energy Conservation (First Law), adiabatic and polytropic efficiency (Second
 Law) and Conservation of Mass (Continuity) for a generic control volume (CV).
+
+A total of 30 variables of a control volume are defined:
+    + 12 thermodynamic properties at the entrance of the CV:
+    + 12 thermodynamic properties at the exit of the CV
+    + 6 variables of the CV
 
 MRodriguez 2020
 
@@ -18,6 +23,37 @@ from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
 
 class ControlVolume(object):
     """
+    Control Volume:
+    ---------------
+
+    A total of 30 variables of a control volume are defined:
+
+    + 12 thermodynamic properties at the entrance of the CV:
+        + Static properties:
+            + p_e, T_e, rho_e, h_e (enthalpy)
+        + Stagnation properties
+            + p_et, T_et, rho_et, h_et (enthalpy)
+        + Other:
+            + vel_e (flow velocity), mach_e, ec_e (kin. energy), mflow_e (mass flow)
+
+    + 12 thermodynamic properties at the exit of the CV
+        + Static properties:
+            + p_s, T_s, rho_s, h_s (enthalpy)
+        + Stagnation properties
+            + p_st, T_st, rho_st, h_st (enthalpy)
+        + Other:
+            + vel_s (flow velocity), mach_s, ec_s (kin. energy), mflow_s (mass flow)
+
+
+    + 6 variables of the CV:
+        + specific power:
+            + q_se (heating/cooling power along the CV), w_se (mechanical power along the CV)
+        + adiab_efficiency, A_e (entrance area), A_s (exit area), delta_massflow (mass flow variation along CV)
+
+    A pyturb fluid class is needed to initialize a ControlVolume.
+
+
+
     """
     def __init__(self, fluid):
         if not(isinstance(fluid, PerfectIdealGas) or isinstance(fluid, SemiperfectIdealGas)):
