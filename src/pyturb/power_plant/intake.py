@@ -16,6 +16,9 @@ from pyturb.power_plant.control_volume import ControlVolume
 from pyturb.gas_models.isentropic_flow import IsentropicFlow
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
+from sympy import symbols, Eq, solveset, S
+import numpy as np
+
 
 class Intake(ControlVolume):
     """
@@ -338,3 +341,40 @@ class Intake(ControlVolume):
 
         self._T_st = self.T_et
 
+        gamma_d = self.fluid.gamma(self.T_et)
+        self._p_st = self.p_e * ((self.T_st / self.T_e - 1)*self.adiab_efficiency + 1)**(gamma_d/(gamma_d-1))
+        self._rho_st = self.rho_e * ((self.T_st / self.T_e - 1)*self.adiab_efficiency + 1)**(1/(gamma_d-1))
+
+        self._w_se = 0
+        self._q_se = 0
+
+        if self.A_s is None:
+            self._vel_s = None
+            self._p_s = None
+            self._T_s = None
+            self._rho_s = None
+            self._ekin_s = None
+            self._h_s = None
+            self._mach_s = None
+        else:
+            Ms = symbols('Ms')
+            ec1 = Eq (self.mflow_s/self.A_s*np.sqrt(self.fluid.Rg/gamma_d)*np.sqrt(self.T_st)/self.p_st, (Ms*(1 + (gamma_d-1)/2*Ms**2) ))
+            M_s = solveset(ec1, Ms, domain=S.Reals)
+
+            M_s_ = list(M_s)
+            M_s_.sort()
+            mach_s_value = M_s_[0] if M_s_[0]>0 else None
+
+            if mach_s_value is None:
+                raise ValueError("Mach number at exit of the CV is not possitive: {0}".format(mach_s_value))
+            else:
+                self._mach_s = float(mach_s_value)
+            
+            self._T_s = self.isent_flow.stat_temp_from_mach(self.mach_s, self.T_st)
+            self._p_s = self.isent_flow.stat_pressure_from_mach(self.mach_s, self.p_st, self.T_st)
+            self._vel_s = self.isent_flow.vel_from_mach(self.mach_s, self.T_s)
+            self._rho_s = self.p_s / self.T_s / self.fluid.Rg
+            self._ekin_s = 0.5 * self.vel_s**2
+            self._h_s = self.fluid.cp(self.T_s) * self.T_s
+
+        return
