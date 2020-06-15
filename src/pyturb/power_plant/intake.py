@@ -294,3 +294,47 @@ class Intake(ControlVolume):
         Adiabatic efficiency along the CV. [dimensionless]
         """
         return self._adiab_efficiency
+
+
+    ## Collects basic inputs of an intake
+    def initialize_intake(self, pe, Te, ve, Ae, adiab_efficiency=1, As=None):
+        """
+        Set basic inputs of a generic intake (diffuser):
+            + Static pressure, static temperature and flow velocity at the entrance
+            + Adiabatic efficiency of the diffuser
+        """
+
+        self._A_e = Ae
+        self._p_e = pe
+        self._T_e = Te
+        self._vel_e = ve
+        self._adiab_efficiency = adiab_efficiency
+        self._A_s = As
+
+        self.solve_intake()
+
+        return None
+
+
+    ## Solves the intake at the entrance:
+    def solve_intake(self):
+        """
+        """
+
+        self._rho_e = self.p_e / self.T_e / self.fluid.Rg
+        self._mach_e = self.isent_flow.mach_number(self.vel_e, self.T_e)
+        self._T_et = self.isent_flow.stag_temp_from_mach(self.mach_e, self.T_e)
+        self._p_et = self.isent_flow.stag_pressure_from_mach(self.mach_e, self.p_e, self.T_e)
+        self._rho_et = self.isent_flow.stag_density_from_mach(self.mach_e, self.rho_e, self.T_e)
+
+        self._mflow_e = self.rho_e * self.A_e * self.vel_e
+        self._mflow_s = self.mflow_e
+        self._delta_massflow = self.mflow_s - self.mflow_e
+
+        self._h_e = self.fluid.cp(self.T_e) * self.T_e
+        self._ekin_e = 0.5 * self.vel_e ** 2
+        self._h_et = self.h_e + self.ekin_e
+        self._h_st = self.h_et
+
+        self._T_st = self.T_et
+
