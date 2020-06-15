@@ -305,3 +305,49 @@ class Nozzle(ControlVolume):
 
         return
 
+
+    ## Collects basic inputs of a nozzle:
+    def initialize_nozzle(self, mflowe, pet, Tet, adiab_efficiency=1, ps=None, Ae=None, As=None):
+        """
+        Set basic inputs of a generic nozzle:
+            + 
+            + 
+        """
+
+        self._mflow_e = mflowe
+        self._mflow_s = mflowe
+        
+        self._p_et = pet
+        self._T_et = Tet
+        
+        self._adiab_efficiency = adiab_efficiency
+
+        self._A_e = Ae
+        self._A_s = As
+
+        self.solve_critical_nozzle()
+        self.solve_generic_nozzle()
+        self.solve_adapted_nozzle()
+
+        return None
+
+
+    def solve_critical_nozzle(self):
+        """
+        """
+
+        return
+
+
+    def solve_adapted_nozzle(self):
+        """
+        """
+
+        return
+    
+
+    def solve_generic_nozzle(self):
+        """
+        """
+
+        return
