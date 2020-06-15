@@ -159,7 +159,7 @@ class ControlVolume(object):
 
     @property
     @abstractmethod
-    def ec_e(self):
+    def ekin_e(self):
         """
         Specific kinetic energy at the entrance of the CV. [W/kg/s]
         """
@@ -282,7 +282,7 @@ class ControlVolume(object):
 
     @property
     @abstractmethod
-    def ec_s(self):
+    def ekin_s(self):
         """
         Specific kinetic energy at the entrance of the CV. [W/kg/s]
         """
