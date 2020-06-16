@@ -16,8 +16,7 @@ from pyturb.power_plant.control_volume import ControlVolume
 from pyturb.gas_models.isentropic_flow import IsentropicFlow
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
-#from sympy import symbols, Eq, solveset, S
-#import numpy as np
+
 
 class Nozzle(ControlVolume):
     """
@@ -307,7 +306,7 @@ class Nozzle(ControlVolume):
 
 
     ## Collects basic inputs of a nozzle:
-    def initialize_nozzle(self, mflowe, pet, Tet, adiab_efficiency=1, ps=None, Ae=None, As=None):
+    def initialize_nozzle(self, mflowe, pet, Tet, adiab_efficiency=1, Ae=None):
         """
         Set basic inputs of a generic nozzle:
             + 
@@ -315,39 +314,95 @@ class Nozzle(ControlVolume):
         """
 
         self._mflow_e = mflowe
-        self._mflow_s = mflowe
-        
         self._p_et = pet
         self._T_et = Tet
-        
         self._adiab_efficiency = adiab_efficiency
-
         self._A_e = Ae
-        self._A_s = As
 
-        self.solve_critical_nozzle()
-        self.solve_generic_nozzle()
-        self.solve_adapted_nozzle()
+        self.solve_basic_properties()
+
+#        self.solve_adapted_nozzle()
+#        self.solve_generic_nozzle()
+#        self.solve_critical_convergent_nozzle()
 
         return None
 
 
-    def solve_critical_nozzle(self):
+    def solve_basic_properties(self):
         """
         """
+        
+        self._mflow_s = self.mflow_e
+        self._delta_massflow = 0
+        self._T_st = self.T_et
+        self._h_et = self.fluid.cp(self.T_et) * self.T_et
+        self._h_st = self.fluid.cp(self.T_st) * self.T_st
+        self._q_se = 0
+        self._w_se = 0
+
+        if self.A_e is None:
+            self._T_e = np.nan
+            self._p_e = np.nan
+            self._rho_e = np.nan
+            self._rho_et = np.nan
+            self._vel_e = np.nan
+            self._h_e = np.nan
+            self._ekin_e = np.nan
+            self._mach_e = np.nan
+        else:
+            gamma_to = self.fluid.gamma(self.T_et)
+            var_aux = self.mflow_e/self.A_e*np.sqrt(self.fluid.Rg/gamma_to) * np.sqrt(self.T_et)/self.p_et
+            var_aux = var_aux ** (-2*(gamma_to-1)/(gamma_to+1))
+
+            Me = symbols('Me')
+            ec1 = Eq(var_aux, (Me+(1+(gamma_to-1)/2*Me**2) ) )
+
+            M_e = solveset(ec1, Me, domain=S.Reals)
+            M_e_ = list(M_e)
+            M_e_.sort(reverse=True)
+
+            mach_e_value = M_e_[0] if M_e_[0]>0 else None
+
+            if mach_e_value is None:
+                raise ValueError("Mach number at entrance of the nozzle is not possitive: {0}".format(mach_e_value))
+            else:
+                self._mach_e = float(mach_e_value)
+            
+            self._T_e = self.isent_flow.stat_temp_from_mach(self.mach_e, self.T_et)
+            self._p_e = self.isent_flow.stat_pressure_from_mach(self.mach_e, self.p_et, self.T_et)
+            self._rho_e = self.p_e / self.T_e / self.fluid.Rg
+            self._rho_et = self.isent_flow.stag_density_from_mach(self.mach_e, self.rho_e, self.T_e)
+            self._vel_e = self.isent_flow.vel_from_mach(self.mach_e, self.T_e)
+            self._h_e = self.fluid.cp(self.T_e) * self.T_e
+            self._ekin_e = 0.5 * self.vel_e**2
 
         return
 
 
-    def solve_adapted_nozzle(self):
+    def solve_adapted_nozzle(self, ps, As=None):
         """
         """
-
         return
     
 
-    def solve_generic_nozzle(self):
+    def solve_critical_convergent_nozzle(self):
         """
         """
 
         return
+
+
+    def solve_critical_condi_nozzle(self):
+        """
+        """
+
+        return
+
+
+    def solve_generic_nozzle(self):
+
+        """
+        """
+
+        return
+
