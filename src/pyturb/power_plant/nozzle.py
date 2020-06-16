@@ -5,7 +5,7 @@ Nozzle:
 Generic nozzle control volume. Extends from ControlVolume.
 
 Implements 30 different thermodynamic properties and variables of the 
-control volume.
+control volume, plus critical conditions at the nozzle (A_star, T_star, p_star).
 
 
 MRodriguez 2020
@@ -21,6 +21,49 @@ import numpy as np
 
 class Nozzle(ControlVolume):
     """
+    Nozzle:
+    -------
+
+    Defines a generic nozzle stage control volume, between one entrance and one
+    exit to the control volume. the nozzle may be solved considering:
+        + Adapted discharge
+        + Critical, convergent nozzle
+        + Critical, con-di (Laval) nozzle
+        + Generic nozzle
+
+    Contents:
+    ---------
+        + initialize_nozzle: initializes the control volume.
+        + solve_basic_properties: partially solves basic thermodynamic properties of the nozzle
+        + solve_adapted_nozzle: Completes the solution considering adapted discharge of the nozzle
+        +
+        +
+
+    A total of 34 variables of a control volume are defined:
+    + 12 thermodynamic properties at the entrance of the CV:
+        + Static properties:
+            + p_e, T_e, rho_e, h_e (enthalpy)
+        + Stagnation properties
+            + p_et, T_et, rho_et, h_et (enthalpy)
+        + Other:
+            + vel_e (flow velocity), mach_e, ec_e (kin. energy), mflow_e (mass flow)
+
+    + 12 thermodynamic properties at the exit of the CV
+        + Static properties:
+            + p_s, T_s, rho_s, h_s (enthalpy)
+        + Stagnation properties
+            + p_st, T_st, rho_st, h_st (enthalpy)
+        + Other:
+            + vel_s (flow velocity), mach_s, ec_s (kin. energy), mflow_s (mass flow)
+
+    + 6 variables of the CV:
+        + specific power:
+            + q_se (heating/cooling power along the CV), w_se (mechanical power along the CV)
+        + adiab_efficiency, A_e (entrance area), A_s (exit area), delta_massflow (mass flow variation along CV)
+    
+    + 4 properties at the nozzle throat, considering choked nozzle:
+        + A_star, p_star, T_star
+
     """
     def __init__(self, fluid, stage=None):
         """
@@ -340,14 +383,19 @@ class Nozzle(ControlVolume):
 
 
     ## Collects basic inputs of a nozzle:
-    def initialize_nozzle(self, mflowe, pet, Tet, adiab_efficiency=1, Ae=None):
+    def initialize_nozzle(self, mflow_e, pet, Tet, adiab_efficiency=1, Ae=None):
         """
         Set basic inputs of a generic nozzle:
-            + 
-            + 
+            + mflow_e: float. Mass flow at the entrance [kg/s]
+            + pet: float. stagnation pressure at the entrance [Pa]
+            + Tet: float. stagnation tmeperature at the entrance [K]
+            + adiab_efficiency: float. Adiabatic efficiency of the nozzle. 
+              By default isentropic nozzle is considered.
+            + Ae: float. Area at the entrance. [m**2]. If no area is provided
+              related properties are set to np.nan in solve_basic_properties().
         """
 
-        self._mflow_e = mflowe
+        self._mflow_e = mflow_e
         self._p_et = pet
         self._T_et = Tet
         self._adiab_efficiency = adiab_efficiency
@@ -355,26 +403,30 @@ class Nozzle(ControlVolume):
 
         self.solve_basic_properties()
 
-#        self.solve_adapted_nozzle()
-#        self.solve_generic_nozzle()
-#        self.solve_critical_convergent_nozzle()
-
         return None
 
 
     def solve_basic_properties(self):
         """
+        Solves basic thermodyamic properties and CV variables at the entrance of
+        the nozzle.
         """
         
-        self._mflow_s = self.mflow_e
-        self._delta_massflow = 0
-        self._T_st = self.T_et
+        # Mass flow
+        self._mflow_s = self.mflow_e # By definition
+        self._delta_massflow = 0     # By definition
+        
+        # Enthalpies:
+        self._T_st = self.T_et  # All nozzles isoenthalpic
         self._h_et = self.fluid.cp(self.T_et) * self.T_et
         self._h_st = self.fluid.cp(self.T_st) * self.T_st
+
+        # By definition, no work/heat is done
         self._q_se = 0
         self._w_se = 0
 
         if self.A_e is None:
+            # If the area at the entrance is not provided all area-related properties are set to nan
             self._T_e = np.nan
             self._p_e = np.nan
             self._rho_e = np.nan
@@ -384,6 +436,7 @@ class Nozzle(ControlVolume):
             self._ekin_e = np.nan
             self._mach_e = np.nan
         else:
+            # If the area is provided, the mach number is calculated
             gamma_to = self.fluid.gamma(self.T_et)
             var_aux = self.mflow_e/self.A_e*np.sqrt(self.fluid.Rg/gamma_to) * np.sqrt(self.T_et)/self.p_et
             var_aux = var_aux ** (-2*(gamma_to-1)/(gamma_to+1))
@@ -402,6 +455,7 @@ class Nozzle(ControlVolume):
             else:
                 self._mach_e = float(mach_e_value)
             
+            # Static properties at the entrance:
             self._T_e = self.isent_flow.stat_temp_from_mach(self.mach_e, self.T_et)
             self._p_e = self.isent_flow.stat_pressure_from_mach(self.mach_e, self.p_et, self.T_et)
             self._rho_e = self.p_e / self.T_e / self.fluid.Rg
@@ -425,17 +479,23 @@ class Nozzle(ControlVolume):
         
         Inputs:
         -------
-
-
+            ps: float. Static pressure of the environment to which the nozzle discharges.
+                As the nozzle is adapted it is also the static pressure at the exit of
+                the nozzle. [Pa]
+            As: float. Area of the exit section (stage #9) of a nozzle. If no area is 
+                provided, it is calculated assuming the adiabatic efficiency set in
+                initialize_nozzle. Otherwise the efficiency is recalculated. A warning
+                is raised if the adiabatic efficiency is unfeasible.
 
         """
 
+        # Store static pressure
         self._p_s = ps
+        
+        gamma_to = self.fluid.gamma(self.T_et)
 
         if As is None:
             # Calculate discharge area assuming adapted nozzle with a given adiabatic efficiency
-            gamma_to = self.fluid.gamma(self.T_et)
-
             Ts_Tet =(1 + self.adiab_efficiency*((self.p_s/self.p_et)**((gamma_to-1)/gamma_to)- 1))
             self._T_s = self.T_et * Ts_Tet
             self.isent_flow
@@ -461,6 +521,9 @@ class Nozzle(ControlVolume):
             self._ekin_s = 0.5 * self.vel_s**2
             self._h_s = self.h_st - self.ekin_s
 
+        #else:
+            # As is provided, check the adiabatic efficiency
+            # TODO: pending
 
         return
     
