@@ -298,7 +298,7 @@ class Intake(ControlVolume):
         """
         return self._adiab_efficiency
 
-
+    
     ## Collects basic inputs of an intake
     def initialize_intake(self, pe, Te, ve, Ae, adiab_efficiency=1, As=None):
         """
@@ -349,20 +349,24 @@ class Intake(ControlVolume):
         self._q_se = 0
 
         if self.A_s is None:
-            self._vel_s = None
-            self._p_s = None
-            self._T_s = None
-            self._rho_s = None
-            self._ekin_s = None
-            self._h_s = None
-            self._mach_s = None
+            self._vel_s = np.nan
+            self._p_s = np.nan
+            self._T_s = np.nan
+            self._rho_s = np.nan
+            self._ekin_s = np.nan
+            self._h_s = np.nan
+            self._mach_s = np.nan
         else:
-            Ms = symbols('Ms')
-            ec1 = Eq (self.mflow_s/self.A_s*np.sqrt(self.fluid.Rg/gamma_d)*np.sqrt(self.T_st)/self.p_st, (Ms*(1 + (gamma_d-1)/2*Ms**2) ))
-            M_s = solveset(ec1, Ms, domain=S.Reals)
+            var_aux = self.mflow_s/self.A_s*np.sqrt(self.fluid.Rg/gamma_d) * np.sqrt(self.T_st)/self.p_st
+            var_aux = var_aux ** (-2*(gamma_d-1)/(gamma_d+1))
 
+            Ms = symbols('Ms')
+
+            ec1 = Eq(var_aux, (Ms+(1+(gamma_d-1)/2*Ms**2) ) )
+
+            M_s = solveset(ec1, Ms, domain=S.Reals)
             M_s_ = list(M_s)
-            M_s_.sort()
+            M_s_.sort(reverse=True)
             mach_s_value = M_s_[0] if M_s_[0]>0 else None
 
             if mach_s_value is None:
@@ -378,3 +382,4 @@ class Intake(ControlVolume):
             self._h_s = self.fluid.cp(self.T_s) * self.T_s
 
         return
+
