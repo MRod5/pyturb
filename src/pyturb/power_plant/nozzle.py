@@ -670,5 +670,96 @@ class Nozzle(ControlVolume):
 
 
     def solve_generic_nozzle(self, ps=None, As=None, nozzle_type='con-di', adiab_efficiency=1):
-      return
+        """
+        Generic nozzle solver. Solves the nozzle assuming the discharge static
+        pressure is not the ambient pressure (static)
+
+        """
+
+        # Nozzle type
+        if nozzle_type.lower()=='condi' or nozzle_type.lower()=='laval'
+            nozzle_type_ = 'con-di'
+        elif nozzle_type.lower()=='con':
+            nozzle_type = 'convergent'
+        elif not nozzle_type.lower() in ['con-di', 'convergent']:
+            warnings.warn('Unknown nozzle type: {}. Nozzle will be set to con-di (default)'.format(nozzle_type))
+        
+
+        # Store static pressure
+        self._p_s = ps
+        gamma_to = self.fluid.gamma(self.T_et)
+
+        if As is None:
+            # Calculate discharge area assuming known adiabatic efficiency and static pressure
+            self._adiab_efficiency = adiab_efficiency
+
+            Ts_Tet =(1 + self.adiab_efficiency*((self.p_s/self.p_et)**((gamma_to-1)/gamma_to)- 1))
+            self._T_s = self.T_et * Ts_Tet
+
+            if self.T_s <= 2/(gamma_to + 1)*self.T_st:
+                self._exit_regime = 'supersonic'
+            else:
+                self._exit_regime = 'subsonic'
+
+            self._vel_s = self.isent_flow.vel_from_stag_temp(self.T_st, self.T_s)
+            self._mach_s = self.isent_flow.mach_number(self.vel_s, self.T_s)
+
+            self._p_st = self.isent_flow.stag_pressure_from_mach(self.mach_s, self.p_s, self.T_s)
+
+            self._rho_s = self.p_s / self.fluid.Rg / self.T_s
+            self._A_s = self.mflow_s / self.rho_s / self.vel_s
+
+            self._T_s_star = self.isent_flow.stat_temp_from_mach(1, self.T_st)
+            self._p_s_star = self.isent_flow.stat_pressure_from_mach(1, self.p_st, self.T_st)
+            self._A_star = self.A_s*self.mach_s*((gamma_to+1)/2/(1+(gamma_to-1)/2*self.mach_s**2))**((gamma_to+1)/2/(gamma_to-1))
+
+            self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
+            self._ekin_s = 0.5 * self.vel_s**2
+            self._h_s = self.h_st - self.ekin_s
+
+        else:
+            # As is provided, check the adiabatic efficiency
+            self._A_s = As
+
+            # Solve static temperature from mass flow 2nd order equation:
+            aux_var = 2*self.fluid.cp(self.T_st)*(self.p_s*self.A_s/self.fluid.Rg/self.mflow_s)**2
+            T9 = (-aux_var + np.sqrt(aux_var**2 + 4*aux_var*self.T_st))/2
+            self._T_s = T9
+
+            if self.T_s <= 2/(gamma_to + 1)*self.T_st:
+                self._exit_regime = 'supersonic'
+            else:
+                self._exit_regime = 'subsonic'
+
+            self._vel_s = self.isent_flow.vel_from_stag_temp(self.T_st, self.T_s)
+            self._mach_s = self.isent_flow.mach_number(self.vel_s, self.T_s)
+            self._p_st = self.isent_flow.stag_pressure_from_mach(self.mach_s, self.p_s, self.T_s)
+            self._rho_s = self.p_s / self.fluid.Rg / self.T_s
+
+            self._T_s_star = self.isent_flow.stat_temp_from_mach(1, self.T_st)
+            self._p_s_star = self.isent_flow.stat_pressure_from_mach(1, self.p_st, self.T_st)
+            self._A_star = self.A_s*self.mach_s*((gamma_to+1)/2/(1+(gamma_to-1)/2*self.mach_s**2))**((gamma_to+1)/2/(gamma_to-1))
+
+            self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
+            self._ekin_s = 0.5 * self.vel_s**2
+            self._h_s = self.h_st - self.ekin_s
+
+            # Recalculate adiabatic efficiency
+            adiab_eff = (self.T_s/self.T_et-1)/((self.p_s/self.p_et)**((gamma_to-1)/gamma_to)-1)
+            self._adiab_efficiency = adiab_eff
+            if not 0<=adiab_eff<=1:
+                warnings.warn('Unfeasible nozzle adiabatic efficiency (ad_eff={0}) for adapted nozzle (ps={1}) and fixed area (As={2})'.format(self.adiab_efficiency, self.p_s, self.T_s), UserWarning)
+            
+
+        if self.exit_regime=='supersonic' and nozzle_type='convergent'
+            # If the nozzle is convergent and supersonic, maximum mach number is 1
+            # From the section where the nozzle is choked to the exit, the nozzle acts as a diffuser
+            vel_star = self.isent_flow.vel_from_mach(1, self.T_s_star)
+            
+            supersonic_convergent_nozzle = Intake(self.fluid)
+            supersonic_convergent_nozzle.initialize_intake(self.p_s_star, self.T_s_star,
+            vel_star, self.A_star, adiab_efficiency=self.adiab_efficiency, As=self.A_s)
+
+
+        return
 
