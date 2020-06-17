@@ -13,11 +13,13 @@ MRodriguez 2020
 """
 
 from pyturb.power_plant.control_volume import ControlVolume
+from pyturb.power_plant.intake import Intake
 from pyturb.gas_models.isentropic_flow import IsentropicFlow
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
 from sympy import symbols, Eq, solveset, S
 import numpy as np
+import warnings
 
 class Nozzle(ControlVolume):
     """
@@ -383,14 +385,12 @@ class Nozzle(ControlVolume):
 
 
     ## Collects basic inputs of a nozzle:
-    def initialize_nozzle(self, mflow_e, pet, Tet, adiab_efficiency=1, Ae=None):
+    def initialize_nozzle(self, mflow_e, pet, Tet, Ae=None):
         """
         Set basic inputs of a generic nozzle:
             + mflow_e: float. Mass flow at the entrance [kg/s]
             + pet: float. stagnation pressure at the entrance [Pa]
             + Tet: float. stagnation tmeperature at the entrance [K]
-            + adiab_efficiency: float. Adiabatic efficiency of the nozzle. 
-              By default isentropic nozzle is considered.
             + Ae: float. Area at the entrance. [m**2]. If no area is provided
               related properties are set to np.nan in solve_basic_properties().
         """
@@ -398,7 +398,6 @@ class Nozzle(ControlVolume):
         self._mflow_e = mflow_e
         self._p_et = pet
         self._T_et = Tet
-        self._adiab_efficiency = adiab_efficiency
         self._A_e = Ae
 
         self.solve_basic_properties()
@@ -486,19 +485,22 @@ class Nozzle(ControlVolume):
                 provided, it is calculated assuming the adiabatic efficiency set in
                 initialize_nozzle. Otherwise the efficiency is recalculated. A warning
                 is raised if the adiabatic efficiency is unfeasible.
+            adiab_effiency: float. Adiabatic efficiency of the nozzle. If the exit area is
+                not provided, isentropic nozzle is assumed. Otherwise it is calculated
 
         """
 
         # Store static pressure
         self._p_s = ps
-        
+
         gamma_to = self.fluid.gamma(self.T_et)
 
         if As is None:
             # Calculate discharge area assuming adapted nozzle with a given adiabatic efficiency
+            self._adiab_efficiency = adiab_efficiency
+
             Ts_Tet =(1 + self.adiab_efficiency*((self.p_s/self.p_et)**((gamma_to-1)/gamma_to)- 1))
             self._T_s = self.T_et * Ts_Tet
-            self.isent_flow
 
             if self.T_s <= 2/(gamma_to + 1)*self.T_st:
                 self._exit_regime = 'supersonic'
@@ -557,24 +559,116 @@ class Nozzle(ControlVolume):
         return
     
 
-    def solve_critical_convergent_nozzle(self):
+    def solve_critical_convergent_nozzle(self, ps=None, As=None, adiab_efficiency=1):
         """
+        Critical nozzle (choked) with convergent geometry (thus critical area is
+        the discharge area A_s). Solves the nozzle assuming critical conditions and:
+            + ps: If ps is provided, the discharge area and adiabatic efficiency are
+                calculated
+            + As: if As is provided, the corresponding adiabatic efficiency and static
+              pressure are calculated. If the efficiency is impossible a warning is raised
+            + adiab_efficiency: If no ps nor As are provided, the adiabatic efficiency is
+                used to calculate the nozzle. By default the nozzle is assumed isentropic.
+
+        Inputs:
+        -------
+            ps: float. Static discharge pressure [Pa]
+            As: float. Discharge, critical area [m**2]
+            adiab_efficiency: float. Adiabatic efficiency of the nozzle. By default is 1 (isentropic)
+        
         """
+
+        gamma_to = self.fluid.gamma(self.T_et)
+
+        # Exit mach number and static temperature:
+        self._mach_s = 1
+        self._exit_regime = 'supersonic'
+        self._T_s = self.isent_flow.stat_temp_from_mach(1, self.T_st)
+        self._vel_s = self.isent_flow.sound_speed(self.T_s)
+
+        if (As is None) and not (ps is None):
+            # Store static pressure
+            self._p_s = ps
+
+            # Calculate the critical discharge area given the adiabatic efficiency
+            self._p_st = self.isent_flow.stag_pressure_from_mach(self.mach_s, self.p_s, self.T_s)
+            self._rho_s = self.p_s / self.fluid.Rg / self.T_s
+            self._A_s = self.mflow_s / self.rho_s / self.vel_s
+
+            self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
+            self._ekin_s = 0.5 * self.vel_s**2
+            self._h_s = self.h_st - self.ekin_s
+
+            # Recalculate adiabatic efficiency
+            adiab_eff = (self.T_s/self.T_et-1)/((self.p_s/self.p_et)**((gamma_to-1)/gamma_to)-1)
+            self._adiab_efficiency = adiab_eff
+            if not 0<=adiab_eff<=1:
+                warnings.warn('Unfeasible nozzle adiabatic efficiency (ad_eff={0}) for adapted nozzle (ps={1}) and fixed area (As={2})'.format(self.adiab_efficiency, self.p_s, self.T_s), UserWarning)
+            
+        elif not (As is None) and (ps is None):
+           # As is provided
+            self._A_s = As
+
+            self._rho_s = self.mflow_s / self.A_s / self.vel_s
+            self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
+            self._p_s = self.rho_s * self.fluid.Rg * self.T_s
+            self._p_st = self.isent_flow.stag_pressure_from_mach(self.mach_s, self.p_s, self.T_s)
+
+            self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
+            self._ekin_s = 0.5 * self.vel_s**2
+            self._h_s = self.h_st - self.ekin_s
+
+            # Recalculate adiabatic efficiency
+            adiab_eff = (self.T_s/self.T_et-1)/((self.p_s/self.p_et)**((gamma_to-1)/gamma_to)-1)
+            self._adiab_efficiency = adiab_eff
+            if not 0<=adiab_eff<=1:
+                warnings.warn('Unfeasible nozzle adiabatic efficiency (ad_eff={0}) for adapted nozzle (ps={1}) and fixed area (As={2})'.format(self.adiab_efficiency, self.p_s, self.T_s), UserWarning)
+
+        elif (As is None) and (ps is None):
+            # Calculate ps form adiabatic efficiency
+            self._adiab_efficiency = adiab_efficiency
+            
+            # Static pressure
+            self._p_s = self.p_et * (1 + (self.T_s/self.T_et -1)/self.adiab_efficiency)**(gamma_to/(gamma_to-1))
+            self._rho_s = self.p_s / self.fluid.Rg / self.T_s
+            self._A_s = self.mflow_s / self.rho_s / self.vel_s
+            self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)            
+            self._p_st = self.isent_flow.stag_pressure_from_mach(self.mach_s, self.p_s, self.T_s)
+
+            self._ekin_s = 0.5 * self.vel_s**2
+            self._h_s = self.h_st - self.ekin_s
+
+        else:
+            warnings.warn('If the nozzle is critical, the area and the static pressure at the discharge section cannot be set at the same time. The static pressure at the discharge section will be dismissed and recalculated.')
+           # As is provided
+            self._A_s = As
+
+            self._rho_s = self.mflow_s / self.A_s / self.vel_s
+            self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
+            self._p_s = self.rho_s * self.fluid.Rg * self.T_s
+            self._p_st = self.isent_flow.stag_pressure_from_mach(self.mach_s, self.p_s, self.T_s)
+
+            self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
+            self._ekin_s = 0.5 * self.vel_s**2
+            self._h_s = self.h_st - self.ekin_s
+
+            # Recalculate adiabatic efficiency
+            adiab_eff = (self.T_s/self.T_et-1)/((self.p_s/self.p_et)**((gamma_to-1)/gamma_to)-1)
+            self._adiab_efficiency = adiab_eff
+            if not 0<=adiab_eff<=1:
+                warnings.warn('Unfeasible nozzle adiabatic efficiency (ad_eff={0}) for adapted nozzle (ps={1}) and fixed area (As={2})'.format(self.adiab_efficiency, self.p_s, self.T_s), UserWarning)
+
+        # Critical conditions:
+        self._p_s_star = self.p_s
+        self._T_s_star = self.T_s
+        self._A_star = self.A_s
+
+        if self.A_s>=self.A_e:
+            warnings.warn('Exit area must be smaller than entry area in a convergent, critical nozzle. Results may be unfeasible')
 
         return
 
 
-    def solve_critical_condi_nozzle(self):
-        """
-        """
-
-        return
-
-
-    def solve_generic_nozzle(self):
-
-        """
-        """
-
-        return
+    def solve_generic_nozzle(self, ps=None, As=None, nozzle_type='con-di', adiab_efficiency=1):
+      return
 
