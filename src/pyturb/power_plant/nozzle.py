@@ -434,27 +434,20 @@ class Nozzle(ControlVolume):
             self._h_e = np.nan
             self._ekin_e = np.nan
             self._mach_e = np.nan
+
         else:
             # If the area is provided, the mach number is calculated
             gamma_to = self.fluid.gamma(self.T_et)
 
-            # XXX: Cambiar este solveset por la solucion iterada
+            # Solve mach at the entrance with variable size iterator:
+            # Subsonic solution:
             var_aux = self.mflow_e/self.A_e*np.sqrt(self.fluid.Rg/gamma_to) * np.sqrt(self.T_et)/self.p_et
             expon = -(gamma_to+1)/(gamma_to-1)/2
 
-            Me = symbols('Me')
-            ec1 = Eq(var_aux, Me*(1+(gamma_to-1)/2*Me**2)**expon)
+            mach_func = lambda M: M*(1+(gamma_to-1)/2*M**2)**(expon) -var_aux
+            mach_solution, _, _ = num_iters.variable_step_roots(x0=0, func=mach_func, dxmax=.2, verbosity=True)
 
-            M_e = solveset(ec1, Me, domain=S.Reals)
-            M_e_ = list(M_e)
-            M_e_.sort(reverse=True)
-
-            mach_e_value = M_e_[0] if M_e_[0]>0 else None
-
-            if mach_e_value is None:
-                raise ValueError("Mach number at entrance of the nozzle is not possitive: {0}".format(mach_e_value))
-            else:
-                self._mach_e = float(mach_e_value)
+            self._mach_e = mach_solution
             
             # Static properties at the entrance:
             self._T_e = self.isent_flow.stat_temp_from_mach(self.mach_e, self.T_et)
