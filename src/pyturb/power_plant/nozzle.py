@@ -461,11 +461,10 @@ class Nozzle(ControlVolume):
         return
 
 
-    def solve_adapted_nozzle(self, ps, As=None, adiab_efficiency=1):
+def solve_from_static_exit_pressure(self, ps, As=None, adiab_efficiency=1, nozzle_type='con-di'):
         """
-        Adapted nozzle (static discharge pressure coincides with local
-        pressure of the environment), solves the nozzle assuming an adiabatic
-        efficiency or dicharge area:
+        Solve nozzle with static discharge pressure known (exit section).
+        The nozzle is assumed to be adiabatic.
             + If As is None, the discharge area is calculated with the provided
               adiabatic efficiency
             + If As is provided, the corresponding adiabatic efficiency is
@@ -473,17 +472,25 @@ class Nozzle(ControlVolume):
         
         Inputs:
         -------
-            ps: float. Static pressure of the environment to which the nozzle discharges.
-                As the nozzle is adapted it is also the static pressure at the exit of
-                the nozzle. [Pa]
+            ps: float. Static pressure at the exit section (stage #9). [Pa]
             As: float. Area of the exit section (stage #9) of a nozzle. If no area is 
                 provided, it is calculated assuming the adiabatic efficiency set in
                 initialize_nozzle. Otherwise the efficiency is recalculated. A warning
                 is raised if the adiabatic efficiency is unfeasible.
             adiab_effiency: float. Adiabatic efficiency of the nozzle. If the exit area is
                 not provided, isentropic nozzle is assumed. Otherwise it is calculated
+            nozzle_type: string. May be 'con-di' for Laval/convergent-divergent nozzle or
+                'convergent' for a convergent nozzle. By default 'con-di' is selected.
 
         """
+
+        # Nozzle type
+        if nozzle_type.lower()=='condi' or nozzle_type.lower()=='laval':
+            nozzle_type = 'con-di'
+        elif nozzle_type.lower()=='con' or nozzle_type.lower()=='conv':
+            nozzle_type = 'convergent'
+        elif not nozzle_type.lower() in ['con-di', 'convergent']:
+            warnings.warn('Unknown nozzle type: {}. Nozzle will be set to con-di (default)'.format(nozzle_type))
 
         # Store static pressure
         self._p_s = ps
@@ -502,6 +509,7 @@ class Nozzle(ControlVolume):
                 self._T_s_star = self.isent_flow.stat_temp_from_mach(1, self.T_st)
                 self._p_s_star = self.isent_flow.stat_pressure_from_mach(1, self.p_st, self.T_st)
                 self._A_star = self.A_s*self.mach_s*((gamma_to+1)/2/(1+(gamma_to-1)/2*self.mach_s**2))**((gamma_to+1)/2/(gamma_to-1))
+
             else:
                 self._exit_regime = 'subsonic'
                 self._T_s_star = np.nan
@@ -546,8 +554,6 @@ class Nozzle(ControlVolume):
             self._p_st = self.isent_flow.stag_pressure_from_mach(self.mach_s, self.p_s, self.T_s)
             self._rho_s = self.p_s / self.fluid.Rg / self.T_s
 
-
-
             self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
             self._ekin_s = 0.5 * self.vel_s**2
             self._h_s = self.h_st - self.ekin_s
@@ -560,26 +566,25 @@ class Nozzle(ControlVolume):
             
 
         if self.exit_regime=='supersonic':
-            expon = -(gamma_to+1)/(2*(gamma_to-1))
-            rel_area = self.A_star/self.A_s
-            # XXX: Obtener mach con relacion de areas
-
-            M_s = symbols('M_s')
-            ec1 = Eq(rel_area, M_s * ((2+(gamma_to-1)*M_s**2)/(gamma_to+1))**expon)
-
-            M_s_ = solveset(ec1, M_s, domain=S.Reals)
-            print(M_s_)
-            M_s_ = list(M_s_)
-            M_s_.sort(reverse=True)
-            print(M_s_)
-            mach_e_value = M_s_[0] if M_s_[0]>0 else None
-
-            if mach_e_value is None:
-                raise ValueError("Mach number at entrance of the nozzle is not possitive: {0}".format(mach_e_value))
+            if nozzle_type=='convergent':
+                # Recalculate solution assuming critical, convergent nozzles
+                self.solve_critical_convergent_nozzle(self.ps, adiab_efficiency=self.adiab_efficiency)
             else:
-                self._mach_e = float(mach_e_value)
+                # Calculate nozzle regime. Solution is iterated:
+                expon = (gamma_to+1)/(2*(gamma_to-1))
+                area_rela = self.A_star/self.A_s
 
-            # XXX: Presion de bloqueo y presion de tobera adaptada bloqueada
+                # Mach function
+                mach_func = lambda M: M*((gamma_to + 1)/2/( 1+(gamma_to-1)/2*M**2 ))**(expon) - area_rela
+
+                # Subsonic solution (pressure at wich choking occurs)
+                subsonic_mach, _, _ = num_iters.variable_step_roots(x0=0.5, func=mach_func, dxmax=.2, verbosity=True)
+
+                # Supersonic solution (pressure at wich supersonic nozzle is adapted).
+                supersonic_mach, _, _ = num_iters.variable_step_roots(x0=1.5, func=mach_func, dxmax=.2, verbosity=True)
+
+                self._pchoke = self.isent_flow.stat_pressure_from_mach(subsonic_mach, self.p_st, self.T_st)
+                self._padapt = self.isent_flow.stat_pressure_from_mach(supersonic_mach, self.p_st, self.T_st)
 
         return
     
