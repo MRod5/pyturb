@@ -17,6 +17,7 @@ from pyturb.power_plant.intake import Intake
 from pyturb.gas_models.isentropic_flow import IsentropicFlow
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
+import pyturb.utils.numerical_iterators as num_iters
 from sympy import symbols, Eq, solveset, S
 import numpy as np
 import warnings
@@ -392,7 +393,7 @@ class Nozzle(ControlVolume):
             + pet: float. stagnation pressure at the entrance [Pa]
             + Tet: float. stagnation tmeperature at the entrance [K]
             + Ae: float. Area at the entrance. [m**2]. If no area is provided
-              related properties are set to np.nan in solve_basic_properties().
+              related properties are set to np.nan in solve_basic_properties()
         """
 
         self._mflow_e = mflow_e
@@ -461,7 +462,7 @@ class Nozzle(ControlVolume):
         return
 
 
-def solve_from_static_exit_pressure(self, ps, As=None, adiab_efficiency=1, nozzle_type='con-di'):
+    def solve_from_static_exit_pressure(self, ps, As=None, adiab_efficiency=1, nozzle_type='con-di'):
         """
         Solve nozzle with static discharge pressure known (exit section).
         The nozzle is assumed to be adiabatic.
@@ -634,7 +635,7 @@ def solve_from_static_exit_pressure(self, ps, As=None, adiab_efficiency=1, nozzl
             self._adiab_efficiency = adiab_eff
             if not 0<=adiab_eff<=1:
                 warnings.warn('Unfeasible nozzle adiabatic efficiency (ad_eff={0}) for adapted nozzle (ps={1}) and fixed area (As={2})'.format(self.adiab_efficiency, self.p_s, self.T_s), UserWarning)
-            
+
         elif not (As is None) and (ps is None):
            # As is provided
             self._A_s = As
@@ -657,7 +658,7 @@ def solve_from_static_exit_pressure(self, ps, As=None, adiab_efficiency=1, nozzl
         elif (As is None) and (ps is None):
             # Calculate ps form adiabatic efficiency
             self._adiab_efficiency = adiab_efficiency
-            
+
             # Static pressure
             self._p_s = self.p_et * (1 + (self.T_s/self.T_et -1)/self.adiab_efficiency)**(gamma_to/(gamma_to-1))
             self._rho_s = self.p_s / self.fluid.Rg / self.T_s
@@ -699,10 +700,9 @@ def solve_from_static_exit_pressure(self, ps, As=None, adiab_efficiency=1, nozzl
         return
 
 
-    def solve_generic_nozzle(self, ps=None, As=None, nozzle_type='con-di', adiab_efficiency=1):
+    def solve_generic_nozzle(self, ps=None, As=None, adiab_efficiency=1, nozzle_type='con-di'):
         """
-        Generic nozzle solver. Solves the nozzle assuming the discharge static
-        pressure is not the ambient pressure (static)
+        Generic nozzle solver. 
 
         """
 
@@ -717,79 +717,42 @@ def solve_from_static_exit_pressure(self, ps, As=None, adiab_efficiency=1, nozzl
 
         gamma_to = self.fluid.gamma(self.T_et)
 
-        if As is None:
+        if (As is None) and (ps is None):
+            warnings.warn("Exit area or exit static pressure must be provided to solve a generic nozzle.")
+            
+        elif (As is None) and not (ps is None):
             # Calculate discharge area assuming known adiabatic efficiency and static pressure
-            # Store static pressure and efficiency:
-            self._p_s = ps
             self._adiab_efficiency = adiab_efficiency
+            self._p_s = ps
+            self.solve_from_static_exit_pressure(self.p_s, adiab_efficiency=self.adiab_efficiency)
 
-            Ts_Tet =(1 + self.adiab_efficiency*((self.p_s/self.p_et)**((gamma_to-1)/gamma_to)- 1))
-            self._T_s = self.T_et * Ts_Tet
-
-            if self.T_s <= 2/(gamma_to + 1)*self.T_st:
-                self._exit_regime = 'supersonic'
-            else:
-                self._exit_regime = 'subsonic'
-
-            self._vel_s = self.isent_flow.vel_from_stag_temp(self.T_st, self.T_s)
-            self._mach_s = self.isent_flow.mach_number(self.vel_s, self.T_s)
-
-            self._p_st = self.isent_flow.stag_pressure_from_mach(self.mach_s, self.p_s, self.T_s)
-
-            self._rho_s = self.p_s / self.fluid.Rg / self.T_s
-            self._A_s = self.mflow_s / self.rho_s / self.vel_s
-
-            self._T_s_star = self.isent_flow.stat_temp_from_mach(1, self.T_st)
-            self._p_s_star = self.isent_flow.stat_pressure_from_mach(1, self.p_st, self.T_st)
-            self._A_star = self.A_s*self.mach_s*((gamma_to+1)/2/(1+(gamma_to-1)/2*self.mach_s**2))**((gamma_to+1)/2/(gamma_to-1))
-
-            self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
-            self._ekin_s = 0.5 * self.vel_s**2
-            self._h_s = self.h_st - self.ekin_s
-
-        else:
-            # XXX OJO CAMBIAR, AQUI SE CONOCE EL AREA Y LA EFICIENCIA PORQUE CONSTRUYES LA TOBERA, DESPEJAS PS
-            # As is provided, check the adiabatic efficiency
+        elif not (As is None) and (ps is None):
+            # As is provided
             self._A_s = As
 
-            # Solve static temperature from mass flow 2nd order equation:
-            aux_var = 2*self.fluid.cp(self.T_st)*(self.p_s*self.A_s/self.fluid.Rg/self.mflow_s)**2
-            T9 = (-aux_var + np.sqrt(aux_var**2 + 4*aux_var*self.T_st))/2
-            self._T_s = T9
+            
+            
+            
+            # XXX: Meter iteraciones de T9 y p9
 
-            if self.T_s <= 2/(gamma_to + 1)*self.T_st:
-                self._exit_regime = 'supersonic'
-            else:
-                self._exit_regime = 'subsonic'
 
             self._vel_s = self.isent_flow.vel_from_stag_temp(self.T_st, self.T_s)
             self._mach_s = self.isent_flow.mach_number(self.vel_s, self.T_s)
-            self._p_st = self.isent_flow.stag_pressure_from_mach(self.mach_s, self.p_s, self.T_s)
-            self._rho_s = self.p_s / self.fluid.Rg / self.T_s
 
-            self._T_s_star = self.isent_flow.stat_temp_from_mach(1, self.T_st)
-            self._p_s_star = self.isent_flow.stat_pressure_from_mach(1, self.p_st, self.T_st)
-            self._A_star = self.A_s*self.mach_s*((gamma_to+1)/2/(1+(gamma_to-1)/2*self.mach_s**2))**((gamma_to+1)/2/(gamma_to-1))
+
+            if self.T_s <= 2/(gamma_to + 1)*self.T_st:
+                self._exit_regime = 'supersonic'
+                self._T_s_star = self.isent_flow.stat_temp_from_mach(1, self.T_st)
+                self._p_s_star = self.isent_flow.stat_pressure_from_mach(1, self.p_st, self.T_st)
+                self._A_star = self.A_s*self.mach_s*((gamma_to+1)/2/(1+(gamma_to-1)/2*self.mach_s**2))**((gamma_to+1)/2/(gamma_to-1))
+            else:
+                self._exit_regime = 'subsonic'
+
 
             self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
             self._ekin_s = 0.5 * self.vel_s**2
             self._h_s = self.h_st - self.ekin_s
 
-            # Recalculate adiabatic efficiency
-            adiab_eff = (self.T_s/self.T_et-1)/((self.p_s/self.p_et)**((gamma_to-1)/gamma_to)-1)
-            self._adiab_efficiency = adiab_eff
-            if not 0<=adiab_eff<=1:
-                warnings.warn('Unfeasible nozzle adiabatic efficiency (ad_eff={0}) for adapted nozzle (ps={1}) and fixed area (As={2})'.format(self.adiab_efficiency, self.p_s, self.T_s), UserWarning)
-            
-
-        if self.exit_regime=='supersonic' and nozzle_type=='convergent':
-            # If the nozzle is convergent and supersonic, maximum mach number is 1
-            # From the section where the nozzle is choked to the exit, the nozzle acts as a diffuser
-            vel_star = self.isent_flow.vel_from_mach(1, self.T_s_star)
-            
-            supersonic_convergent_nozzle = Intake(self.fluid)
-            supersonic_convergent_nozzle.initialize_intake(self.p_s_star, self.T_s_star,
-            vel_star, self.A_star, adiab_efficiency=self.adiab_efficiency, As=self.A_s)
 
 
         return
