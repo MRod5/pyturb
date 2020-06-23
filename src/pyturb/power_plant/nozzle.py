@@ -376,11 +376,41 @@ class Nozzle(ControlVolume):
         return self._A_star
 
 
+    @property
+    def pchoke(self):
+        """
+        Static pressure to have a supersonic nozzle.
+        """
+        return self._pchoke
+
+
+    @property
+    def padapt(self):
+        """
+        Static pressure to have a supersonic, adapted nozzle.
+        """
+        return self._padapt
+  
+
+
     ## Initializes the nozzle with the exit properties of a CV:
-    def initialize_from_cv(self):
+    def initialize_from_cv(self, cv):
         """
         Initialize nozzle from the exit properties of last CV.
         """
+
+        # Isentropic flow:
+        if not(isinstance(cv, ControlVolume)):
+            # The control volume from which the nozzle has to be initialized is not a ControlVolume object
+            raise TypeError("Object must be of type ControlVolume, SemiperfectIdealGas. Instead received {}".format(cv))
+    
+
+        self._mflow_e = cv.mflow_s
+        self._p_et = cv.p_st
+        self._T_et = cv.T_st
+        self._A_e = cv.A_s
+
+        self.solve_basic_properties()
 
         return
 
@@ -730,10 +760,13 @@ class Nozzle(ControlVolume):
             # As is provided
             self._A_s = As
 
+            T_s_function = lambda T_s: self.p_et * (1+ (T_s/self.T_et-1)/self.adiab_efficiency)**(gamma_to/(gamma_to-1)) - self.mflow_s*self.fluid.Rg*T_s/self.A_s/np.sqrt(2*self.fluid.cp(self.T_st - T_s))
+            T_s_solution, _, _ = num_iters.variable_step_roots(x0=220, func=T_s_function, dxmax=5, verbosity=True)
             
-            
-            
-            # XXX: Meter iteraciones de T9 y p9
+            p_s = self.mflow_s*self.fluid.Rg*T_s_solution/self.A_s / self.isent_flow.vel_from_stag_temp(self.T_st, T_s_solution)
+
+            self._p_s = p_s
+            self._T_s = T_s_solution
 
 
             self._vel_s = self.isent_flow.vel_from_stag_temp(self.T_st, self.T_s)
@@ -747,12 +780,36 @@ class Nozzle(ControlVolume):
                 self._A_star = self.A_s*self.mach_s*((gamma_to+1)/2/(1+(gamma_to-1)/2*self.mach_s**2))**((gamma_to+1)/2/(gamma_to-1))
             else:
                 self._exit_regime = 'subsonic'
+                self._T_s_star = np.nan
+                self._p_s_star = np.nan
+                self._A_star = np.nan
 
 
             self._rho_st = self.isent_flow.stag_density_from_mach(self.mach_s, self.rho_s, self.T_s)
             self._ekin_s = 0.5 * self.vel_s**2
             self._h_s = self.h_st - self.ekin_s
 
+
+        if self.exit_regime=='supersonic':
+            if nozzle_type=='convergent':
+                # Recalculate solution assuming critical, convergent nozzles
+                self.solve_critical_convergent_nozzle(self.ps, adiab_efficiency=self.adiab_efficiency)
+            else:
+                # Calculate nozzle regime. Solution is iterated:
+                expon = (gamma_to+1)/(2*(gamma_to-1))
+                area_rela = self.A_star/self.A_s
+
+                # Mach function
+                mach_func = lambda M: M*((gamma_to + 1)/2/( 1+(gamma_to-1)/2*M**2 ))**(expon) - area_rela
+
+                # Subsonic solution (pressure at wich choking occurs)
+                subsonic_mach, _, _ = num_iters.variable_step_roots(x0=0.5, func=mach_func, dxmax=.2, verbosity=True)
+
+                # Supersonic solution (pressure at wich supersonic nozzle is adapted).
+                supersonic_mach, _, _ = num_iters.variable_step_roots(x0=1.5, func=mach_func, dxmax=.2, verbosity=True)
+
+                self._pchoke = self.isent_flow.stat_pressure_from_mach(subsonic_mach, self.p_st, self.T_st)
+                self._padapt = self.isent_flow.stat_pressure_from_mach(supersonic_mach, self.p_st, self.T_st)
 
 
         return
