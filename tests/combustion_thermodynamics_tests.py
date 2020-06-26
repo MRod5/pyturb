@@ -12,3 +12,4 @@ comb.stoichiometry()
 
 print(comb.stoichiometric_reaction)
 
+print(comb.alpha)

@@ -66,35 +66,86 @@ class ThermoCombustion(object):
         gamma = 0
         self.stoichiometric_reaction = ''
         reactants = ''
-        product = ''
-        print(self.fuel.thermo_prop.chemical_formula)
+        products = ''
+        hydrocarbon = False
+
         for element in self.fuel.thermo_prop.chemical_formula:
-            if element is "C":
+            if element is 'C':
                 alpha = self.fuel.thermo_prop.chemical_formula[element]
                 reactants += "C{0:1.0f}".format(alpha) if not alpha==0 else self.stoichiometric_reaction
+                hydrocarbon = True
             
-            elif element is "H":
+            elif element is 'H':
                 beta = self.fuel.thermo_prop.chemical_formula[element]
                 reactants += "H{0:1.0f}".format(beta) if not beta==0 else self.stoichiometric_reaction
+                hydrocarbon = True if hydrocarbon else False
             
-            elif element is "O":
+            elif element is 'O':
                 gamma = self.fuel.thermo_prop.chemical_formula[element]
                 reactants += "O{0:1.0f}".format(gamma) if not gamma==0 else self.stoichiometric_reaction
 
         oxidizer_fuel_ratio = alpha + beta/4 - gamma/2
 
-        if self.oxidizer.gas_species is "Air":
+        if self.oxidizer.gas_species is 'Air':
             delta = 1
-
             reactants += " + {0:1.3f}(O2 + 79/21 N2)".format(oxidizer_fuel_ratio)
-
-        else:
-            delta = 0
+            if hydrocarbon:
+                products = "{0:1.0f} CO2 + {1:1.0f} H2O + {2:1.0f}·79/21 N2".format(alpha, beta/2, oxidizer_fuel_ratio)
             
+
+        elif self.oxidizer.gas_species is 'O2':
+            delta = 0
             reactants += " + {0:1.3f} O2".format(oxidizer_fuel_ratio)
+            
+            if hydrocarbon:
+                products = "{0:1.0f} CO2 + {1:1.0f} H2O".format(alpha, beta/2)
 
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-        self.delta = delta
+        elif self.oxidizer.gas_species is 'O3':
+            # XXX terminar
+            hydrocarbon = True if hydrocarbon else False
+        
+        else:
+            hydrocarbon = False
+            raise NotImplementedError
 
+        # Store stoichiometric coefficients:
+        self._alpha = alpha
+        self._beta = beta
+        self._gamma = gamma
+        self._delta = delta
+        self._oxidizer_fuel_ratio = oxidizer_fuel_ratio
+        
+
+        if hydrocarbon:
+            self.stoichiometric_reaction = reactants + ' --> ' + products
+
+
+    @property
+    def alpha(self):
+        """
+        """
+        return self._alpha
+
+        @property
+    def beta(self):
+        """
+        """
+        return self._beta
+
+        @property
+    def gamma(self):
+        """
+        """
+        return self._gamma
+
+        @property
+    def delta(self):
+        """
+        """
+        return self._delta
+
+        @property
+    def oxidizer_fuel_ratio(self):
+        """
+        """
+        return self._oxidizer_fuel_ratio
