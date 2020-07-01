@@ -16,6 +16,7 @@ from pyturb.power_plant.control_volume import ControlVolume
 from pyturb.gas_models.isentropic_flow import IsentropicFlow
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
+from pyturb.combustion.combustion_thermodynamics import Combustion
 import numpy as np
 import warnings
 
@@ -23,28 +24,53 @@ import warnings
 class Combustor(ControlVolume):
     """
     """
-    def __init__(self, fluid, stage=None):
+    def __init__(self, fluid, fuel, stage=None, oxidizer=None, dismiss_mixture=True):
         """
         """
         # Stage of the power plant:
         self.stage = stage
+
+        # Dismiss mixture: If True, working fluid of the combuster is the object fluid. Otherwise
+        # a mixture of fuel and oxidizer is considered. In case the oxidizer is not specified, it is 
+        # assumed the oxidizer is the working fluid.
+        self._dismiss_mixture = dismiss_mixture
         
         # Initialize superclass methods
         super().__init__(fluid)
 
-        # Isentropic flow:
+        # Check fuel and fluid objects
         if not(isinstance(fluid, PerfectIdealGas) or isinstance(fluid, SemiperfectIdealGas)):
-            # Check the flow is a Perfect or a Semiperfect gas fom pyturb
+            # Check the flow is a Perfect or a Semiperfect gas from pyturb
             raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas. Instead received {}".format(fluid))
+
+        if not(isinstance(fuel, PerfectIdealGas) or isinstance(fuel, SemiperfectIdealGas)):
+            # Check the fuel is a Perfect or a Semiperfect gas from pyturb
+            raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas. Instead received {}".format(fuel))
     
+        # If dismiss_mixture:
+        if self._dismiss_mixture:
+            self.combustion = Combustion(fuel, fluid)
+        else:
+            if oxidizer is None:
+                self.combustion = Combustion(fuel, fluid)
+                raise NotImplementedError("Mixture of fuel+fluid not implemented")
+            else:
+                if not(isinstance(fuel, PerfectIdealGas) or isinstance(fuel, SemiperfectIdealGas)):
+                # Check the fuel is a Perfect or a Semiperfect gas from pyturb
+                    raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas. Instead received {}".format(fuel))
+                self.combustion = Combustion(fuel, oxidizer)
+                raise NotImplementedError("Mixture of fuel+fluid not implemented")
+
+
+        # Isentropic flow:
         self.isent_flow = IsentropicFlow(self.fluid)
 
-            
+
         return None
 
 
     # **************************
-    # *** Entrance of the CV *** 
+    # *** Entrance of the CV ***
     # **************************
     # Static thermodynamic properties:
     @property
@@ -297,7 +323,31 @@ class Combustor(ControlVolume):
         """
         Heat of combustion absorption efficiency. [dimensionless]
         """
-        return self._adiab_efficiency
+        return self._combustion_efficiency
+
+
+    @property
+    def fuel_flow(self):
+        """
+        Fuel flow. [kg/s]
+        """
+        return self._c
+    
+
+    @property
+    def far(self):
+        """
+        Fuel-air ratio of the mixture.
+        """
+        return self._far
+
+    
+    @property
+    def equivalence_ratio(self):
+        """
+        Equivalence ratio of the mixture.
+        """
+        return self._equivalence_ratio
 
 
     ## Initializes the combustion chamber with the exit properties of a CV:
@@ -323,7 +373,7 @@ class Combustor(ControlVolume):
 
 
     ## Collects basic inputs of a combustion chamber:
-    def initialize_nozzle(self, mflow_e, pet, Tet, Ae=None, c=None, f=None, phi=None):
+    def initialize_combustor(self, mflow_e, pet, Tet, Ae=None, fuel_flow=None, far_=None, phi=None):
         """
         Set basic inputs of a generic nozzle:
             + mflow_e: float. Mass flow at the entrance [kg/s]
@@ -337,10 +387,9 @@ class Combustor(ControlVolume):
         self._p_et = pet
         self._T_et = Tet
         self._A_e = Ae
-        self._c = c
-        self._far = f
-        self._equiv_ratio = phi
-
+        self._c = fuel_flow
+        self._far = far_
+        self._equivalence_ratio = phi
 
         self.solve_basic_properties()
 
@@ -349,37 +398,57 @@ class Combustor(ControlVolume):
 
     def solve_basic_properties(self):
         """
+
         """
-        c = self.c
-        f = self.far
-        phi = self.equiv_ratio
+
+        # Solve stoihiometric reaction:
+        self.combustion.stoichiometry()
+
+
+        # Solve fuel mass and ratios:
+        fuel_flow = self.fuel_flow
+        far_ = self.far
+        phi = self.equivalence_ratio
+
 
         # Fuel flow:
-        if not (c is None) and (f is None):
-            c_ = c
-            f_ = c_/self.mflow_e
+        if phi is None:
+            if not (fuel_flow is None) and (far_ is None):
+                c_ = fuel_flow
+                far_ = c_/self.mflow_e
 
-        elif (c is None) and not (f is None):
-            f_ = f
-            c_ = f_*self.mflow_e
+            elif (fuel_flow is None) and not (far_ is None):
+                far_ = far_
+                c_ = far_*self.mflow_e
+                
+            elif not (fuel_flow is None) and not (far_ is None):
+                if np.abs(fuel_flow/self.mflow_e-far_)>1e-4:
+                    warnings.warn('Discrepancy between fuel flow ({})kg/s and FAR ({}). Fuel/Air ratio will be recalculated'.format(fuel_flow, far_))
+                    c_ = fuel_flow
+                    far_ = c_/self.mflow_e
+
+                else:
+                    c_ = fuel_flow
+                    far_ = far_
+
+            phi_ = far_ /self.combustion.stoich_far
             
-        elif not (c is None) and not (f is None):
-            if np.abs(c/self.mflow_e-f)>1e-4:
-                warnings.warn('Discrepancy between fuel flow ({})kg/s and FAR ({}). Fuel/Air ratio will be recalculated'.format(c, f))
-                c_ = c
-                f_ = c_/self.mflow_e
-
-            else:
-                c_ = c
-                f_ = f
+        else:
+            phi_ = phi
+            far_ = phi_ * self.combustion.stoich_far
+            c_ = far_*self.mflow_e
         
-        if not (1e-3<f_<1e-1):
-            warnings.warn('Unfeasible fuel/air ratio: {}'.format(f_))
+        if not (1e-3<far_<1e-1):
+            warnings.warn('Unfeasible fuel/air ratio: {}'.format(far_))
 
         ## Store fuel flow and FAR:
-        self._f = f_
+        self._far = far_
         self._c = c_
 
+
+        # Mass flow
+        self._mflow_s = self.mflow_e + self.fuel_flow
+        self._delta_massflow = self._mflow_s     # By definition
 
         return
 
