@@ -155,8 +155,9 @@ class Combustion(object):
         return True
 
 
-    def stoichiometry(self):
+    def _combustion_stoichiometry_simple_reaction(self):
         """
+        Stoichiometric reaction of a combustion with one molecule of fuel and an oxidizer.
         """
 
         alpha = 0
@@ -227,6 +228,7 @@ class Combustion(object):
         self._delta = delta
         self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio
 
+        # TODO: Must be an independent function, otherwise the FAR of a full reaction wont make sense
         # Fuel/Air ratio:
         if delta == 1:
             self._stoich_far = self.fuel.thermo_prop.Mg / (self.oxidizer_fuel_ratio/0.21*self.oxidizer.thermo_prop.Mg)
@@ -234,13 +236,27 @@ class Combustion(object):
         else:
             self._stoich_far = np.nan
 
+
+    def combustion_stoichiometry(self):
+        """
+        Stoichiometric reaction of the combustion process. If the fuel is a mixture,
+        the combustion is decomposed in simple reactions with one molecule of fuel
+        each. The global reaction stoichiometry is calculated adding up the 
+        stoichiometric coefficients of the simpler reaction.
+        """
+        # TODO: This function should classify the fuel. If the fuel is a simple molecule,
+        # TODO: call _combustion_stoichiometry_simple_reaction, otherwise identify all
+        # TODO: molecules in the fuel mixture and then call the simple reaction
+        self._combustion_stoichiometry_simple_reaction()
+        return
         
-        def heat_of_combustion(self):
-            """
-            """
+    
+    def heat_of_combustion(self):
+        """
+        """
 
-            # TODO: calculate heat of combustion as -Qp (heat of comburtion by definition). If water is formed, 
-            # calculate both condensed and vapor water
+        # TODO: calculate heat of combustion as -Qp (heat of comburtion by definition). If water is formed, 
+        # calculate both condensed and vapor water
 
-            # TODO: With the heat of combustion calculated, obtain the HHV and LHV
+        # TODO: With the heat of combustion calculated, obtain the HHV and LHV
 

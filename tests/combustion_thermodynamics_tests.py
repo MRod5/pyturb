@@ -9,7 +9,7 @@ print(air.thermo_prop.chemical_formula)
 
 comb = Combustion(fuel, air)
 
-comb.stoichiometry()
+comb.combustion_stoichiometry()
 print(comb.stoichiometric_reaction)
 
 print(comb.stoich_far)
