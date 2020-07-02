@@ -115,6 +115,30 @@ class Combustion(object):
         """
         return self._stoich_far
 
+    
+    @property
+    def LHV(self):
+        """
+        Lower heating value. [J/kg]
+        """
+        return self._LHV
+
+
+    @property
+    def HHV(self):
+        """
+        Higher heating value. [J/kg]
+        """
+        return self._HHV
+
+
+    @property
+    def hcomb(self):
+        """
+        Combustion Enthalpy. [J/mol]
+        """
+        return self._hcomb
+
 
     def _classify_reactants(self):
         """
@@ -141,25 +165,37 @@ class Combustion(object):
         reactants = ""
         productsC = ""
         productsH = ""
+        
+        reactants_dict = {}
+        products_dict = {}
 
 
+        # TODO: Fuel mixtures will need a rework of alpha, beta, gamma coefficients
+
+        # Reactants:
         for element in self.fuel.thermo_prop.chemical_formula:
             if element is "C":
                 alpha = self.fuel.thermo_prop.chemical_formula[element]
                 reactants += "C{0:1.0f}".format(alpha) if not alpha==0 else self.stoichiometric_reaction
+
+                # XXX: CO2 is formed if O2 is the oxidizer, not just when carbon appears
                 productsC += "{0:1.0f}CO2".format(alpha)
             
             elif element is "H":
                 beta = self.fuel.thermo_prop.chemical_formula[element]
                 reactants += "H{0:1.0f}".format(beta) if not beta==0 else self.stoichiometric_reaction
+
+                # XXX: same. H2O is formed if oxygen is present.
                 productsH += "{0:1.0f}H2O".format(beta/2)
             
             elif element is "O":
                 gamma = self.fuel.thermo_prop.chemical_formula[element]
                 reactants += "O{0:1.0f}".format(gamma) if not gamma==0 else self.stoichiometric_reaction
 
+        # Oxidizer to fuel ratio depending on C, H, O atoms
         self._oxidizer_fuel_ratio = alpha + beta/4 - gamma/2
 
+        # Products:
         if not (productsC is "" and productsH is ""):
             products = productsC + " + " + productsH
 
@@ -169,6 +205,7 @@ class Combustion(object):
         else:
             products = productsC
 
+        # If mixture has inert species
         if self.oxidizer.gas_species is "Air":
             delta = 1
             reactants += " + {0:1.3f}(O2 + 79/21 N2)".format(self.oxidizer_fuel_ratio)
@@ -178,16 +215,19 @@ class Combustion(object):
             delta = 0
             reactants += " + {0:1.3f} O2".format(self.oxidizer_fuel_ratio)
 
+        # Combustion reaction:
         self._stoichiometric_reaction = reactants + " --> " + products
         self._reactants = reactants
         self._products = products
         
+        # Coefficients:
         self._alpha = alpha
         self._beta = beta
         self._gamma = gamma
         self._delta = delta
         self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio
 
+        # Fuel/Air ratio:
         if delta == 1:
             self._stoich_far = self.fuel.thermo_prop.Mg / (self.oxidizer_fuel_ratio/0.21*self.oxidizer.thermo_prop.Mg)
         
@@ -195,3 +235,12 @@ class Combustion(object):
             self._stoich_far = np.nan
 
         
+        def heat_of_combustion(self):
+            """
+            """
+
+            # TODO: calculate heat of combustion as -Qp (heat of comburtion by definition). If water is formed, 
+            # calculate both condensed and vapor water
+
+            # TODO: With the heat of combustion calculated, obtain the HHV and LHV
+
