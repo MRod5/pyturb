@@ -38,6 +38,11 @@ class Combustion(object):
 
         if not reactants_status:
             raise ValueError("Unknown fuel and oxidizer")
+        else:
+            self._alpha = 0
+            self._beta = 0
+            self._gamma = 0
+            self._delta = 0
 
 
         return
@@ -133,15 +138,24 @@ class Combustion(object):
 
 
     @property
-    def hcomb(self):
+    def hcomb_l(self):
         """
-        Combustion Enthalpy. [J/mol]
+        Combustion Enthalpy, considering all products are condensed. [J/mol]
+        """
+        return self._hcomb
+
+
+    @property
+    def hcomb_g(self):
+        """
+        Combustion Enthalpy, considered all products are vaporized. [J/mol]
         """
         return self._hcomb
 
 
     def _classify_reactants(self):
         """
+        Check fuel and oxidizer species.
         """
 
         if not self.oxidizer.gas_species in self.oxidizer_list:
@@ -160,16 +174,18 @@ class Combustion(object):
         Stoichiometric reaction of a combustion with one molecule of fuel and an oxidizer.
         """
 
+        has_carbon = False
+        has_hydrogen = False
+        has_oxygen = False
+
+        reactants = ""
+        products = ""
+
         alpha = 0
         beta = 0
         gamma = 0
-        reactants = ""
-        productsC = ""
-        productsH = ""
-        
-        reactants_dict = {}
-        products_dict = {}
-
+        delta = 0
+       
 
         # TODO: Fuel mixtures will need a rework of alpha, beta, gamma coefficients
 
@@ -177,56 +193,76 @@ class Combustion(object):
         for element in self.fuel.thermo_prop.chemical_formula:
             if element is "C":
                 alpha = self.fuel.thermo_prop.chemical_formula[element]
-                reactants += "C{0:1.0f}".format(alpha) if not alpha==0 else self.stoichiometric_reaction
+                reactants += "C{0:1.0f}".format(alpha) if not alpha==0 else reactants
+                has_carbon = True
 
-                # XXX: CO2 is formed if O2 is the oxidizer, not just when carbon appears
-                productsC += "{0:1.0f}CO2".format(alpha)
-            
             elif element is "H":
                 beta = self.fuel.thermo_prop.chemical_formula[element]
-                reactants += "H{0:1.0f}".format(beta) if not beta==0 else self.stoichiometric_reaction
+                reactants += "H{0:1.0f}".format(beta) if not beta==0 else reactants
+                has_hydrogen = True
 
-                # XXX: same. H2O is formed if oxygen is present.
-                productsH += "{0:1.0f}H2O".format(beta/2)
             
             elif element is "O":
                 gamma = self.fuel.thermo_prop.chemical_formula[element]
-                reactants += "O{0:1.0f}".format(gamma) if not gamma==0 else self.stoichiometric_reaction
+                reactants += "O{0:1.0f}".format(gamma) if not gamma==0 else reactants
+                has_oxygen = True
+        
 
         # Oxidizer to fuel ratio depending on C, H, O atoms
         self._oxidizer_fuel_ratio = alpha + beta/4 - gamma/2
 
-        # Products:
-        if not (productsC is "" and productsH is ""):
-            products = productsC + " + " + productsH
 
-        elif productsC is "":
-            products = productsH
-
-        else:
-            products = productsC
-
-        # If mixture has inert species
+        # Oxidizer
         if self.oxidizer.gas_species is "Air":
             delta = 1
+            has_oxygen = True
             reactants += " + {0:1.3f}(O2 + 79/21 N2)".format(self.oxidizer_fuel_ratio)
-            products += " + {0:1.3f}(79/21 N2)".format(self.oxidizer_fuel_ratio)
 
         else:
             delta = 0
-            reactants += " + {0:1.3f} O2".format(self.oxidizer_fuel_ratio)
+            for element in self.oxidizer.thermo_prop.chemical_formula:
+                if element is "O":
+                    has_oxygen = True
+                    reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
 
+
+                if element is "N":
+                    delta = 1
+                    reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+
+
+        # Products:
+        if has_oxygen:
+            # Hydrocarbon and hydorgen case:
+            if has_carbon and not has_hydrogen: 
+                products += "{0:1.0f}CO2".format(alpha)
+
+            elif not has_carbon and has_hydrogen:
+                products += "{0:1.0f}H2O".format(beta/2)
+            
+            elif has_carbon and has_hydrogen:
+                products += "{0:1.0f}CO2 + {0:1.0f}H2O".format(alpha, beta/2)
+
+        #else:        
+            # TODO: Complete with other ozidizers in the future
+
+        # Nytrogen present:        
+        if delta == 1:
+            products += " + {0:1.3f}(79/21 N2)".format(self.oxidizer_fuel_ratio)
+
+       
         # Combustion reaction:
         self._stoichiometric_reaction = reactants + " --> " + products
         self._reactants = reactants
         self._products = products
         
+
         # Coefficients:
-        self._alpha = alpha
-        self._beta = beta
-        self._gamma = gamma
-        self._delta = delta
-        self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio
+        self._alpha += alpha
+        self._beta += beta
+        self._gamma += gamma
+        self._delta = delta if delta == 1 else self._delta
+
 
         # TODO: Must be an independent function, otherwise the FAR of a full reaction wont make sense
         # Fuel/Air ratio:
@@ -260,3 +296,4 @@ class Combustion(object):
 
         # TODO: With the heat of combustion calculated, obtain the HHV and LHV
 
+        
