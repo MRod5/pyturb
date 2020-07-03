@@ -46,7 +46,8 @@ class GasMixture(object):
 
         pure_substance = self.gas_model(species)
 
-        self.pure_substance[pure_substance.gas_species] = {'subtance_props': pure_substance,'moles': moles}
+        # TODO: Evaluate using pandas instead...
+        self.pure_substance[pure_substance.gas_species] = {'substance_props': pure_substance,'moles': moles}
 
         self._get_mixture_properties()
 
@@ -56,10 +57,31 @@ class GasMixture(object):
     def _get_mixture_properties(self):
         """
         """
-        self._Nmix = np.sum(self.pure_subtance.value())
+        self._Nmix = 0
+        self._Mg = 0
+        
+        for gas in self.pure_substance:
+            pure_substance = self.pure_substance[gas]
+            self._Nmix += pure_substance['moles']
+            # TODO: dataframe will be more efficient here, one for-loop would be needed
+            
+        
+        for gas in self.pure_substance:
+            pure_substance = self.pure_substance[gas]
+            molar_frac[gas] = pure_substance['moles']/self.Nmix
+            self._Mg += pure_substance['substance_props'].thermo_prop.Mg * molar_frac[gas]
+
+
         return
 
+
+    @property
+    def Nmix(self):
+        """
+        """
+        return self._Nmix
     
+
     @property
     def Ru(self):
         """
@@ -71,7 +93,18 @@ class GasMixture(object):
 
     
     @property
-    def Nmix(self):
+    def Rg(self):
         """
+        Get the Mixture Gas constant Rg =  Ru/Mg [J/kg/K]
         """
-        return self._Nmix
+        
+        Rg = self.Ru/self.Mg*1e3
+        return Rg
+
+
+    @property
+    def Mg(self):
+        """
+        Get the Mixture molecular mass [g/mol]
+        """
+        return self._Mg
