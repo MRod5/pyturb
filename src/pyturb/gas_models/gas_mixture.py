@@ -1,10 +1,11 @@
 """
 """
 import pyturb.utils.constants as cts
-from pyturb.gas_models.gas_mixture import Gas
+from pyturb.gas_models.gas import Gas
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
 import numpy as np
+import pandas as pd
 import warnings
 
 
@@ -25,8 +26,8 @@ class GasMixture(object):
             self.gas_model = None
             raise ValueError("gas_model may be 'perfect' or 'semi-perfect', instead received {}".format(gas_model))
         
-
-        self.pure_substance = {}
+        columns = ['pure_substance_props', 'Ng', 'Mg', 'Rg']
+        self.mixture_gases = pd.DataFrame(columns=columns, index=['gas0'])
 
         # Mixture initialization:
         if not mixture is None:
@@ -47,9 +48,9 @@ class GasMixture(object):
         pure_substance = self.gas_model(species)
 
         # TODO: Evaluate using pandas instead...
-        self.pure_substance[pure_substance.gas_species] = {'substance_props': pure_substance,'moles': moles}
-
-        self._get_mixture_properties()
+        self.mixture_gases.append({'substance_props': pure_substance,'Ng': moles, 'Mg': pure_substance.thermo_prop.Mg, 'Rg': pure_substance.Rg}, ignore_index=True)
+        print(self.mixture_gases)
+        #self._get_mixture_properties()
 
         return
 
