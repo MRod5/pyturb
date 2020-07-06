@@ -20,6 +20,9 @@ class Gas(object):
         gas_species: Species selected. May be a pure substance or any of the molecules and mixes
                      considered in "NASA Glenn Coefficients for Calculating Thermodynamic
                      Properties of Individual Species".
+        Ng: Number of moles of the gas [mol]
+        mg: Mass quantity of the gas [kg]
+        Mg: Molecular mass of the gas [g/mol]
         Ru: Ideal gas law universal constant  [J/mol/K]
         Rg: Individual gas constant [J/kg/K]
     + Methods:
@@ -33,6 +36,7 @@ class Gas(object):
 
     """
 
+
     @property
     @abstractmethod
     def gas_species(self):
@@ -43,7 +47,25 @@ class Gas(object):
         """
         raise NotImplementedError
 
-        
+
+    @property
+    @abstractmethod
+    def Ng(self):
+        """
+        Get the number of moles of gas [mol]
+        """
+        return NotImplementedError
+    
+
+    @property
+    @abstractmethod
+    def mg(self):
+        """
+        Get the mass quantity of gas [kg]
+        """
+        return NotImplementedError
+
+
     @property
     @abstractmethod
     def Ru(self):
@@ -58,6 +80,15 @@ class Gas(object):
     def Rg(self):
         """
         Get the Individual Gas constant Rg =  Ru/Mg [J/kg/K]
+        """
+        raise NotImplementedError
+
+
+    @property
+    @abstractmethod
+    def Mg(self):
+        """
+        Molecular mass of the gas. [g/mol]
         """
         raise NotImplementedError
 
