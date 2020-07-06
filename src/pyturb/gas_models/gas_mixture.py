@@ -78,7 +78,24 @@ class GasMixture(object):
         return
 
 
-    
+    def _update_mixture_properties(self):
+        """
+        """
+
+        self._n_species = len(self.mixture_gases.index)
+
+        self._Ng = np.sum(self.mixture_gases['Ng'])
+        self._mg = np.sum(self.mixture_gases['mg'])
+
+        self._mixture_gases['molar_frac'] = self.mixture_gases['Ng'] / self.Ng
+        self._mixture_gases['mass_frac'] = self.mixture_gases['mg'] / self.mg
+
+        self._Mg = 0
+        for ii, xi in enumerate(self.mixture_gases['molar_frac']):
+            self._Mg += xi * self.mixture_gases.loc[ii]['Mg']
+
+
+        return    
 
 
     @property
