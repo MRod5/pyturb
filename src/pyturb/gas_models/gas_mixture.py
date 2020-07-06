@@ -42,7 +42,6 @@ class GasMixture(object):
         return
 
 
-
     def add_gas(self, species, moles=None, mass=None):
         """
         """
@@ -95,7 +94,53 @@ class GasMixture(object):
             self._Mg += xi * self.mixture_gases.loc[ii]['Mg']
 
 
-        return    
+        return
+
+
+    def cp_molar(self, temperature=None):
+        """
+        Molar heat capacity ratio at constant pressure [J/mol/K].
+
+        As a semiperfect gas, cp is a function of the temperature. It is calculated as a
+        7 coefficients polynomial:
+            cp/Rg = a1*T**(-2) + a2*T**(-1) + a3 + a4*T**(1) + a5*T**(2) + a6*T**(3) + a7*T**(4)
+
+        As a perfect gas, cp is considered invariant with temperature. It is calculated as a
+        semi-perfect gas (which means cp(T)) at T_ref temperature for any temperature.
+        """
+
+        if temperature is None:
+            if not(isinstance(self.gas_model, SemiperfectIdealGas)):
+                raise ValueError("If gas model is semi-perfect a temperature must be provided to calculate the cp.")
+
+        cp_ = 0
+        for ii, xi in enumerate(self.mixture_gases['molar_frac']):
+            cp_ += xi * self.mixture_gases.loc[ii]['gas_properties'].cp_molar(temperature)
+
+        return cp_
+
+
+    def cp(self, temperature=None):
+        """
+        Heat capacity ratio at constant pressure [J/kg/K].
+
+        As a semiperfect gas, cp is a function of the temperature. It is calculated as a
+        7 coefficients polynomial:
+            cp/Rg = a1*T**(-2) + a2*T**(-1) + a3 + a4*T**(1) + a5*T**(2) + a6*T**(3) + a7*T**(4)
+
+        As a perfect gas, cp is considered invariant with temperature. It is calculated as a
+        semi-perfect gas (which means cp(T)) at T_ref temperature for any temperature.
+        """
+
+        if temperature is None:
+            if not(isinstance(self.gas_model, SemiperfectIdealGas)):
+                raise ValueError("If gas model is semi-perfect a temperature must be provided to calculate the cp.")
+
+        cp_ = 0
+        for ii, yi in enumerate(self.mixture_gases['mass_frac']):
+            cp_ += yi * self.mixture_gases.loc[ii]['gas_properties'].cp(temperature)
+
+        return cp_
 
 
     @property
