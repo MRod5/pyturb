@@ -26,8 +26,10 @@ class GasMixture(object):
             self.gas_model = None
             raise ValueError("gas_model may be 'perfect' or 'semi-perfect', instead received {}".format(gas_model))
         
-        columns = ['pure_substance_props', 'Ng', 'Mg', 'Rg']
-        self.mixture_gases = pd.DataFrame(columns=columns, index=['gas0'])
+        self._n_species = 0
+        self._mixture_gases_columns = ['gas_species', 'gas_properties', 'Ng', 'Mg', 'mg', 'Rg', 'molar_frac', 'mass_frac']
+        self._mixture_gases = pd.DataFrame(columns=self._mixture_gases_columns)
+
 
         # Mixture initialization:
         if not mixture is None:
@@ -37,50 +39,74 @@ class GasMixture(object):
                 #TODO: call add_gas for each pure substance in the mixture
                 print("")
 
+        return
+
+
+
+    def add_gas(self, species, moles=None, mass=None):
+        """
+        """
+
+        if moles is None and mass is None:
+            raise ValueError('Quantity (moles or mass) of gas must be specified in add_gas.')
+        else:
+
+            pure_substance = self.gas_model(species)
+
+            if mass is None:
+                moles_ = moles # mol
+                mass_ = moles_ * pure_substance.Rg * 1e-3 # kg
+
+            elif moles is None:
+                mass_ = mass #kg
+                moles_ = mass_ / pure_substance.Rg * 1e3 # mol
+
+            else:
+                warnings.warn("mass ({0}kg) will be dismised and recalculated with the moles quantity provided: {1}mol.".format(mass, moles))
+                moles_ = moles
+                mass_ = mass_ = moles_ * pure_substance.Rg * 1e3 # kg
+
+
+
+        subst_props = {'gas_species': pure_substance.gas_species, 'gas_properties': pure_substance, 'Ng': moles_, 'Mg': pure_substance.thermo_prop.Mg, 'mg': mass_, 'Rg': pure_substance.Rg, 'molar_frac': np.nan, 'mass_frac': np.nan}
+
+        new_gas = len(self._mixture_gases.index)
+        self._mixture_gases.loc[new_gas] = subst_props
+
+        self._update_mixture_properties()
 
         return
 
 
-    def add_gas(self, species, moles):
-        """
-        """
-
-        pure_substance = self.gas_model(species)
-
-        # TODO: Evaluate using pandas instead...
-        self.mixture_gases.append({'substance_props': pure_substance,'Ng': moles, 'Mg': pure_substance.thermo_prop.Mg, 'Rg': pure_substance.Rg}, ignore_index=True)
-        print(self.mixture_gases)
-        #self._get_mixture_properties()
-
-        return
-
-
-    def _get_mixture_properties(self):
-        """
-        """
-        self._Nmix = 0
-        self._Mg = 0
-        
-        for gas in self.pure_substance:
-            pure_substance = self.pure_substance[gas]
-            self._Nmix += pure_substance['moles']
-            # TODO: dataframe will be more efficient here, one for-loop would be needed
-            
-        
-        for gas in self.pure_substance:
-            pure_substance = self.pure_substance[gas]
-            molar_frac[gas] = pure_substance['moles']/self.Nmix
-            self._Mg += pure_substance['substance_props'].thermo_prop.Mg * molar_frac[gas]
-
-
-        return
+    
 
 
     @property
-    def Nmix(self):
+    def n_species(self):
         """
         """
-        return self._Nmix
+        return self._n_species
+
+
+    @property
+    def mixture_gases(self):
+        """
+        """
+        return self._mixture_gases
+    
+    
+    @property
+    def Ng(self):
+        """
+        """
+        return self._Ng
+    
+
+    @property
+    def mg(self):
+        """
+        """
+        return self._mg
     
 
     @property
@@ -109,3 +135,4 @@ class GasMixture(object):
         Get the Mixture molecular mass [g/mol]
         """
         return self._Mg
+
