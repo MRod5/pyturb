@@ -16,7 +16,6 @@ class GasMixture(object):
     def __init__(self, gas_model = "perfect", mixture=None):
         """
         """
-
         # Gas model selector:
         if gas_model.lower() == "perfect":
             self.gas_model = PerfectIdealGas
@@ -40,6 +39,62 @@ class GasMixture(object):
                 print("")
 
         return
+
+
+    @property
+    def n_species(self):
+        """
+        """
+        return self._n_species
+
+
+    @property
+    def mixture_gases(self):
+        """
+        """
+        return self._mixture_gases
+    
+    
+    @property
+    def Ng(self):
+        """
+        """
+        return self._Ng
+    
+
+    @property
+    def mg(self):
+        """
+        """
+        return self._mg
+    
+
+    @property
+    def Ru(self):
+        """
+        Get the Ideal Gas Law constant Ru [J/mol/K]
+        """
+        
+        Ru = cts.Ru
+        return Ru
+
+    
+    @property
+    def Rg(self):
+        """
+        Get the Mixture Gas constant Rg =  Ru/Mg [J/kg/K]
+        """
+        
+        Rg = self.Ru/self.Mg*1e3
+        return Rg
+
+
+    @property
+    def Mg(self):
+        """
+        Get the Mixture molecular mass [g/mol]
+        """
+        return self._Mg
 
 
     def add_gas(self, species, moles=None, mass=None):
@@ -132,69 +187,53 @@ class GasMixture(object):
         semi-perfect gas (which means cp(T)) at T_ref temperature for any temperature.
         """
 
-        if temperature is None:
-            if not(isinstance(self.gas_model, SemiperfectIdealGas)):
-                raise ValueError("If gas model is semi-perfect a temperature must be provided to calculate the cp.")
-
-        cp_ = 0
-        for ii, yi in enumerate(self.mixture_gases['mass_frac']):
-            cp_ += yi * self.mixture_gases.loc[ii]['gas_properties'].cp(temperature)
+        cp_ = self.cp_molar(temperature)
+        cp_ *= 1e3/self.Mg
 
         return cp_
 
 
-    @property
-    def n_species(self):
+    def cv_molar(self, temperature=None):
         """
+        Molar heat capacity ratio at constant volume [J/mol/K].
+
+        As a semiperfect gas, cp is a function of the temperature. It is calculated as a
+        7 coefficients polynomial:
+            cp/Rg = a1*T**(-2) + a2*T**(-1) + a3 + a4*T**(1) + a5*T**(2) + a6*T**(3) + a7*T**(4)
+
+        As a semiperfect gas, cv is a function of tempeature. cv is calculated with the 
+        Mayer equation: cv(T) = cp(T) - Rg (ideal gas).
         """
-        return self._n_species
+
+        cv_ = self.cp_molar(temperature) - self.Ru
+
+        return cv_
 
 
-    @property
-    def mixture_gases(self):
+    def cv(self, temperature=None):
         """
-        """
-        return self._mixture_gases
-    
-    
-    @property
-    def Ng(self):
-        """
-        """
-        return self._Ng
-    
+        Heat capacity ratio at constant volume [J/kg/K]
 
-    @property
-    def mg(self):
-        """
-        """
-        return self._mg
-    
-
-    @property
-    def Ru(self):
-        """
-        Get the Ideal Gas Law constant Ru [J/mol/K]
+        As an ideal gas, cv is invariant with tempeature. cv is calculated with the 
+        Mayer equation: cv = cp - Rg.
         """
         
-        Ru = cts.Ru
-        return Ru
+        cv_ = self.cp(temperature) - self.Rg
 
-    
-    @property
-    def Rg(self):
-        """
-        Get the Mixture Gas constant Rg =  Ru/Mg [J/kg/K]
-        """
-        
-        Rg = self.Ru/self.Mg*1e3
-        return Rg
+        return cv_
 
 
-    @property
-    def Mg(self):
+    def gamma(self, temperature=None):
         """
-        Get the Mixture molecular mass [g/mol]
-        """
-        return self._Mg
+        Heat capacity ratio cp/cv [-].
 
+        As a perfect gas, gamma is considered invariant with temperature. gamma is calculated
+        as gamma = cp/cv.
+
+        As a semiperfect gas, gamma is a function of tempeature. Gamma is calculated with the 
+        Mayer equation: cv(T) = cp(T) - Rg (ideal gas).
+        """
+
+        gamma_ = self.cp_molar(temperature) / self.cv_molar(temperature)
+
+        return gamma_
