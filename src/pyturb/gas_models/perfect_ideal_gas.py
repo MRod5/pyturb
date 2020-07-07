@@ -172,7 +172,7 @@ class PerfectIdealGas(Gas):
         Mayer equation: cv = cp - Ru.
         """
         
-        cv_ = self.cp_mol() - self.Ru
+        cv_ = self.cp_molar() - self.Ru
         return cv_
 
 
