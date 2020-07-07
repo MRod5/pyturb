@@ -5,7 +5,7 @@ from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
 import numpy as np
 import warnings
 
-oxidizers = ['Air', 'O2', 'O3', 'O2(L)', 'O3(L)']
+oxidizers = ['Air', 'O', 'O2', 'O3', 'O2(L)', 'O3(L)']
 fuels = ['hydrocarbon', 'C8H18,isooctane', '']
 
 class Combustion(object):
@@ -180,6 +180,8 @@ class Combustion(object):
 
         reactants = ""
         products = ""
+        products_dictionary = {}
+        reactants_dictionary = {}
 
         alpha = 0
         beta = 0
@@ -190,6 +192,7 @@ class Combustion(object):
         # TODO: Fuel mixtures will need a rework of alpha, beta, gamma coefficients
 
         # Reactants:
+        reactants_dictionary[self.fuel.thermo_prop.chemical_formula] = 1
         for element in self.fuel.thermo_prop.chemical_formula:
             if element is "C":
                 alpha = self.fuel.thermo_prop.chemical_formula[element]
@@ -208,15 +211,46 @@ class Combustion(object):
                 has_oxygen = True
         
 
-        # Oxidizer to fuel ratio depending on C, H, O atoms
+        # Oxidizer to fuel ratio depending on C, H, O atoms, assuming O2 as oxidizer
         self._oxidizer_fuel_ratio = alpha + beta/4 - gamma/2
 
-
+        # TODO: Rework products. Mixtures must be accepted...
         # Oxidizer
         if self.oxidizer.gas_species is "Air":
             delta = 1
             has_oxygen = True
             reactants += " + {0:1.3f}(O2 + 79/21 N2)".format(self.oxidizer_fuel_ratio)
+
+        elif self.oxidizer.gas_species is "O2" or self.oxidizer.gas_species is "O2(L)":
+            delta = 0
+            for element in self.oxidizer.thermo_prop.chemical_formula:
+                if element is "O":
+                    has_oxygen = True
+                    reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+
+                if element is "N":
+                    delta = 1
+                    reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+
+        elif self.oxidizer.gas_species is "O3" or self.oxidizer.gas_species is "O3(L)":
+            self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2/3
+            if element is "O":
+                    has_oxygen = True
+                    reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+
+            if element is "N":
+                delta = 1
+                reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+
+        elif self.oxidizer.gas_species is "O":
+            self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2
+            if element is "O":
+                has_oxygen = True
+                reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+
+            if element is "N":
+                delta = 1
+                reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
 
         else:
             delta = 0
@@ -224,7 +258,6 @@ class Combustion(object):
                 if element is "O":
                     has_oxygen = True
                     reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
-
 
                 if element is "N":
                     delta = 1
@@ -236,12 +269,31 @@ class Combustion(object):
             # Hydrocarbon and hydorgen case:
             if has_carbon and not has_hydrogen: 
                 products += "{0:1.0f}CO2".format(alpha)
+                
+                if "CO2" in products_dictionary.keys():
+                    products_dictionary['CO2'] = products_dictionary['CO2'] + alpha
+                else:
+                    products_dictionary['CO2'] = alpha
 
             elif not has_carbon and has_hydrogen:
                 products += "{0:1.0f}H2O".format(beta/2)
+
+                if "H2O" in products_dictionary.keys():
+                    products_dictionary['H2O'] = products_dictionary['CO2'] + beta/2
+                else:
+                    products_dictionary['H2O'] = beta/2
             
             elif has_carbon and has_hydrogen:
                 products += "{0:1.0f}CO2 + {0:1.0f}H2O".format(alpha, beta/2)
+                if "CO2" in products_dictionary.keys():
+                    products_dictionary['CO2'] = products_dictionary['CO2'] + alpha
+                else:
+                    products_dictionary['CO2'] = alpha
+                
+                if "H2O" in products_dictionary.keys():
+                    products_dictionary['H2O'] = products_dictionary['CO2'] + beta/2
+                else:
+                    products_dictionary['H2O'] = beta/2
 
         #else:        
             # TODO: Complete with other ozidizers in the future
