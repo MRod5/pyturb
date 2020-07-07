@@ -40,3 +40,6 @@ np.testing.assert_almost_equal(gm2.Mg, air.thermo_prop.Mg, decimal=6)
 np.testing.assert_almost_equal(gm2.cp(cts.T_ref), air.cp(cts.T_ref), decimal=6)
 np.testing.assert_almost_equal(gm2.cv(cts.T_ref), air.cv(cts.T_ref), decimal=6)
 np.testing.assert_almost_equal(gm2.gamma(cts.T_ref), air.gamma(cts.T_ref), decimal=6)
+
+print(gm2.h0(cts.T_ref))
+print(air.h0(cts.T_ref))

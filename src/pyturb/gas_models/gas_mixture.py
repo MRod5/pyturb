@@ -237,3 +237,37 @@ class GasMixture(object):
         gamma_ = self.cp_molar(temperature) / self.cv_molar(temperature)
 
         return gamma_
+
+    
+    def h0_molar(self, temperature):
+        """
+        assigned molar enthalpy:
+            h0(T) = deltaHf(T_ref) + (h0(T) - h0(T_ref)) [J/mol].
+
+        """
+
+        if temperature is None:
+            if not(isinstance(self.gas_model, SemiperfectIdealGas)):
+                raise ValueError("If gas model is semi-perfect a temperature must be provided to calculate the cp.")
+
+        h0_ = 0
+        for ii, xi in enumerate(self.mixture_gases['molar_frac']):
+            h0_ += xi * self.mixture_gases.loc[ii]['gas_properties'].h0_molar(temperature)
+
+        return h0_
+            
+
+    def h0(self, temperature):
+        """
+        assigned enthalpy:
+            h0(T) = deltaHf(T_ref) + (h0(T) - h0(T_ref)) [J/kg].
+
+        """
+
+        if temperature is None:
+            if not(isinstance(self.gas_model, SemiperfectIdealGas)):
+                raise ValueError("If gas model is semi-perfect a temperature must be provided to calculate the cp.")
+
+        h0_ = self.h0_molar(temperature) * 1e3/self.Mg
+
+        return h0_
