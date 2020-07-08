@@ -6,7 +6,13 @@ import numpy as np
 import warnings
 
 oxidizers = ['Air', 'O', 'O2', 'O3', 'O2(L)', 'O3(L)']
-fuels = ['hydrocarbon', 'C8H18,isooctane', '']
+
+fuels = ['hydrocarbon', 'C8H18,isooctane', 
+         'CH4', 'C2H6', 'C3H8', 'C4H10', 'C5H12', 'C6H14', 'C7H16', 'C8H18',
+         'CH4O', 'C2H6O']
+
+inert_gases = ['He', 'Ar', 'N2',
+               'CO2', 'CO']
 
 class Combustion(object):
     """
@@ -142,7 +148,7 @@ class Combustion(object):
         """
         Combustion Enthalpy, considering all products are condensed. [J/mol]
         """
-        return self._hcomb
+        return self._hcomb_l
 
 
     @property
@@ -150,7 +156,7 @@ class Combustion(object):
         """
         Combustion Enthalpy, considered all products are vaporized. [J/mol]
         """
-        return self._hcomb
+        return self._hcomb_g
 
 
     def _classify_reactants(self):
@@ -158,7 +164,7 @@ class Combustion(object):
         Check fuel and oxidizer species.
         """
 
-        if not self.oxidizer.gas_species in self.oxidizer_list:
+        if not (self.oxidizer.gas_species in self.oxidizer_list or self.oxidizer.gas_species == "mixture"):
             warnings.warn("Requested oxidizer ({0}) not available. Available oxidizers: {1}".format(self.oxidizer.species, self.oxidizer_list))
             return False
     
@@ -180,6 +186,7 @@ class Combustion(object):
 
         reactants = ""
         products = ""
+        inerts = ""
         products_dictionary = {}
         reactants_dictionary = {}
 
@@ -192,20 +199,20 @@ class Combustion(object):
         # TODO: Fuel mixtures will need a rework of alpha, beta, gamma coefficients
 
         # Reactants:
-        reactants_dictionary[self.fuel.thermo_prop.chemical_formula] = 1
+        reactants_dictionary[self.fuel.gas_species] = 1
         for element in self.fuel.thermo_prop.chemical_formula:
-            if element is "C":
+            if element == "C":
                 alpha = self.fuel.thermo_prop.chemical_formula[element]
                 reactants += "C{0:1.0f}".format(alpha) if not alpha==0 else reactants
                 has_carbon = True
 
-            elif element is "H":
+            elif element == "H":
                 beta = self.fuel.thermo_prop.chemical_formula[element]
                 reactants += "H{0:1.0f}".format(beta) if not beta==0 else reactants
                 has_hydrogen = True
 
             
-            elif element is "O":
+            elif element == "O":
                 gamma = self.fuel.thermo_prop.chemical_formula[element]
                 reactants += "O{0:1.0f}".format(gamma) if not gamma==0 else reactants
                 has_oxygen = True
@@ -216,52 +223,75 @@ class Combustion(object):
 
         # TODO: Rework products. Mixtures must be accepted...
         # Oxidizer
-        if self.oxidizer.gas_species is "Air":
+        if self.oxidizer.gas_species == "Air":
             delta = 1
             has_oxygen = True
             reactants += " + {0:1.3f}(O2 + 79/21 N2)".format(self.oxidizer_fuel_ratio)
 
-        elif self.oxidizer.gas_species is "O2" or self.oxidizer.gas_species is "O2(L)":
+        elif self.oxidizer.gas_species == "O2" or self.oxidizer.gas_species == "O2(L)":
             delta = 0
             for element in self.oxidizer.thermo_prop.chemical_formula:
-                if element is "O":
+                if element == "O":
                     has_oxygen = True
                     reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
 
-                if element is "N":
+                if element == "N":
                     delta = 1
                     reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
 
-        elif self.oxidizer.gas_species is "O3" or self.oxidizer.gas_species is "O3(L)":
+        elif self.oxidizer.gas_species == "O3" or self.oxidizer.gas_species == "O3(L)":
             self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2/3
-            if element is "O":
+            if element == "O":
                     has_oxygen = True
                     reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
 
-            if element is "N":
+            if element == "N":
                 delta = 1
                 reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
 
-        elif self.oxidizer.gas_species is "O":
+        elif self.oxidizer.gas_species == "O":
             self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2
-            if element is "O":
+            if element == "O":
                 has_oxygen = True
                 reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
 
-            if element is "N":
+            if element == "N":
                 delta = 1
                 reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
 
-        else:
-            delta = 0
-            for element in self.oxidizer.thermo_prop.chemical_formula:
-                if element is "O":
-                    has_oxygen = True
-                    reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
 
-                if element is "N":
-                    delta = 1
-                    reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+        else:
+            if self.oxidizer.gas_species == "mixture":
+                a = b = c = d = 0
+                delta = 0
+                for ii, gases in enumerate(self.oxidizer.mixture_gases['gas_species']):
+                    if gases == "O":
+                        has_oxygen = True
+                        a = self.oxidizer.mixture_gases.loc[ii]['Ng']
+
+                    elif gases == "O2":
+                        has_oxygen = True
+                        b = self.oxidizer.mixture_gases.loc[ii]['Ng']
+
+                    elif gases == "O3":
+                        has_oxygen = True
+                        c = self.oxidizer.mixture_gases.loc[ii]['Ng']
+
+
+                self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2 / (a + 2*b + 3*c)
+                if a!=0:
+                    reactants += " + {0:1.3f} O".format(a*self.oxidizer_fuel_ratio)
+                if b!=0:
+                    reactants += " + {0:1.3f} O2".format(b*self.oxidizer_fuel_ratio)
+                if c!=0:
+                    reactants += " + {0:1.3f} O3".format(c*self.oxidizer_fuel_ratio)
+
+                for ii, gases in enumerate(self.oxidizer.mixture_gases['gas_species']):
+                    if gases in inert_gases:
+                        delta = 1
+                        d = self.oxidizer.mixture_gases.loc[ii]['Ng'] * self._oxidizer_fuel_ratio
+                        inerts += " + {0:1.0f}{1}".format(d, gases)
+                        reactants += inerts
 
 
         # Products:
@@ -284,7 +314,7 @@ class Combustion(object):
                     products_dictionary['H2O'] = beta/2
             
             elif has_carbon and has_hydrogen:
-                products += "{0:1.0f}CO2 + {0:1.0f}H2O".format(alpha, beta/2)
+                products += "{0:1.0f}CO2 + {1:1.0f}H2O".format(alpha, beta/2)
                 if "CO2" in products_dictionary.keys():
                     products_dictionary['CO2'] = products_dictionary['CO2'] + alpha
                 else:
@@ -300,7 +330,10 @@ class Combustion(object):
 
         # Nytrogen present:        
         if delta == 1:
-            products += " + {0:1.3f}(79/21 N2)".format(self.oxidizer_fuel_ratio)
+            if self.oxidizer.gas_species == "Air":
+                products += " + {0:1.3f}(79/21 N2)".format(self.oxidizer_fuel_ratio)
+            else:
+                products += inerts
 
        
         # Combustion reaction:
@@ -318,8 +351,8 @@ class Combustion(object):
 
         # TODO: Must be an independent function, otherwise the FAR of a full reaction wont make sense
         # Fuel/Air ratio:
-        if delta == 1:
-            self._stoich_far = self.fuel.thermo_prop.Mg / (self.oxidizer_fuel_ratio/0.21*self.oxidizer.thermo_prop.Mg)
+        if self.oxidizer.gas_species == "Air":
+            self._stoich_far = self.fuel.thermo_prop.Mg / (self.oxidizer_fuel_ratio/0.21*self.oxidizer.Mg)
         
         else:
             self._stoich_far = np.nan
