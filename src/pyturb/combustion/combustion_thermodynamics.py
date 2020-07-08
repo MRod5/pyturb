@@ -1,4 +1,11 @@
 """
+combustion_thermodynamics:
+--------------------------
+
+Combustion reaction thermodynamical properties.
+
+MRodriguez 2020
+
 """
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas

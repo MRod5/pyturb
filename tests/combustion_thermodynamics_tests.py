@@ -1,3 +1,4 @@
+from pyturb.gas_models.gas_mixture import GasMixture
 from pyturb.combustion.combustion_thermodynamics import Combustion
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 
@@ -17,3 +18,12 @@ print(comb.alpha)
 print(comb.beta)
 print(comb.gamma)
 
+oxidmix = GasMixture(gas_model="perfect")
+oxidmix.add_gas('O2', 0.5)
+oxidmix.add_gas('O3', 0.33333)
+oxidmix.add_gas('N2', 1)
+
+comb = Combustion(fuel, oxidmix)
+
+comb.combustion_stoichiometry()
+print(comb.stoichiometric_reaction)
