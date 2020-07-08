@@ -68,7 +68,7 @@ class PerfectIdealGas(Gas):
 
         # Reference temperature and gas species
         self.T_ref = cts.T_ref
-        self.__gas_species = species
+        self._gas_species = species
         
         return
         
@@ -81,7 +81,7 @@ class PerfectIdealGas(Gas):
         Properties of Individual Species".
         """
         
-        return self.__gas_species
+        return self._gas_species
         
 
     @property
@@ -100,8 +100,17 @@ class PerfectIdealGas(Gas):
         Get the Individual Gas constant Rg =  Ru/Mg [J/kg/K]
         """
         
-        Rg = self.Ru/self.thermo_prop.Mg*1e3
+        Rg = self.Ru/self.Mg*1e3
         return Rg
+
+
+    @property
+    def Mg(self):
+        """
+        Get the molecular mass Mg [g/mol]
+        """
+        
+        return self.thermo_prop.Mg
         
         
     def cp_dimensionless(self, temperature=None):

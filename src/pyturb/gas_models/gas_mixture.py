@@ -26,6 +26,7 @@ class GasMixture(object):
             raise ValueError("gas_model may be 'perfect' or 'semi-perfect', instead received {}".format(gas_model))
         
         self._n_species = 0
+        self._gas_species = "mixture"
         self._mixture_gases_columns = ['gas_species', 'gas_properties', 'Ng', 'Mg', 'mg', 'Rg', 'molar_frac', 'mass_frac']
         self._mixture_gases = pd.DataFrame(columns=self._mixture_gases_columns)
 
@@ -39,6 +40,17 @@ class GasMixture(object):
                 print("")
 
         return
+
+
+    @property
+    def gas_species(self):
+        """
+        Gets the Name of the gas species selected. May be a pure substance or any of the 
+        molecules and mixes considered in "NASA Glenn Coefficients for Calculating Thermodynamic
+        Properties of Individual Species".
+        """
+        
+        return self._gas_species
 
 
     @property
@@ -119,7 +131,6 @@ class GasMixture(object):
                 warnings.warn("mass ({0}kg) will be dismised and recalculated with the moles quantity provided: {1}mol.".format(mass, moles))
                 moles_ = moles
                 mass_ = mass_ = moles_ * pure_substance.Rg * 1e3 # kg
-
 
 
         subst_props = {'gas_species': pure_substance.gas_species, 'gas_properties': pure_substance, 'Ng': moles_, 'Mg': pure_substance.thermo_prop.Mg, 'mg': mass_, 'Rg': pure_substance.Rg, 'molar_frac': np.nan, 'mass_frac': np.nan}

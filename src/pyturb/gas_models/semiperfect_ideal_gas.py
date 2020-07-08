@@ -99,6 +99,15 @@ class SemiperfectIdealGas(Gas):
         Rg = self.Ru/self.thermo_prop.Mg*1e3
         return Rg
         
+
+    @property
+    def Mg(self):
+        """
+        Get the molecular mass Mg [g/mol]
+        """
+        
+        return self.thermo_prop.Mg
+
     
     def cp_dimensionless(self, temperature):
         """
