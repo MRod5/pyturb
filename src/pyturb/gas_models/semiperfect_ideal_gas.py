@@ -227,7 +227,7 @@ class SemiperfectIdealGas(Gas):
     def h0(self, temperature):
         """
         Assigned enthalpy:
-        h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) [J/kg].
+            h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) = int(cp(T)*dT). [J/kg]
        
         """
             
@@ -238,8 +238,8 @@ class SemiperfectIdealGas(Gas):
         
     def h0_molar(self, temperature):
         """
-        assigned molar enthalpy:
-            h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) [J/mol].
+        Assigned molar enthalpy:
+            h0(T) = deltaHf(T_ref) + (H0(T) - h0(T_ref)) = int(cp(T)*dT). [J/mol]
 
         """
             
