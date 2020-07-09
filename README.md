@@ -1,24 +1,50 @@
-# pyTurb
----
-
-A python Gas Turbine package!
+# pyTurb: A python Gas Turbine package!
 
 ---
 
-Under development... 
+Under development...
 
-### Gas Models:
-- Implemented *Perfect Ideal Gas* and *Semiperfect Ideal Gas*
-- Implemented International Standard Atmosphere
+## Control Volumes:
+
+`src\pyturb\power_plant\`
+
+- Intake (`intake.py`): Diffuser control volume (lowers kinetic energy, raises sensible enthalpy)
+- Nozzle (`nozzle.py`): Nozzle control volume (raises kinetic energy, lowers, T and p)
+- Combustor (`combustor.py`): Heat power provided a fuel and oxidizer
+- more to come...
 
 
-### Utils:
-- Conversion of units to and from international system
+## Gas Models:
+
+`src\pyturb\gas_models\`
+
+- *Perfect Ideal Gas* and *Semiperfect Ideal Gas* approaches (`perfect_ideal_gas.py`, `semiperfect_ideal_gas.py`):
+  - Perfect gas: Constant cp, cv, gamma
+  - Semiperfect gas: Specific heats are functions of the temperature. cv(T), cp(T), gamma(T)
+  - Ideal gas: pv=RgT, Rg=cp-cv
+- *Gas Mixtures* of ideal gases (`gas_mixture.py`):
+  - Mixture properties (molar fraction, mass fraction, cp, cv, gamma...)
+  - Mixture may be *Perfect* or *Semiperfect*
+- Combustion thermodynamics (`combustion_thermodynamics.py`):
+  - Stoichiometric coefficients, LHV, HHV, heat of combustion
+  - Fuel mixtures and oxidizer mistures
+  - Fuel-air ratio
+- Implemented the International Standard Atmosphere (COESA 1975) from 0m to 84852m (`isa.py`)
+
+
+## Utils:
+
+`src\pyturb\utils\`
+
+- Conversion of units to and from international system (`units.py`)
+- Universal constants (`constants.py`)
+- Numerical iterators: root finder with variable step and equation iterator for 2 independent variables (`numerical_iterators.py`)
 
 
 ---
 
-### References
+## References
+
 **[1]** - *Equations tables and charts for compressible flow*. National Advisory Committee for Aeronautics, report 1135
 
 **[2]** - *Coefficients for calculating thermodynamic and transport properties of individual species*. NASA Technical Memorandum 4513
@@ -27,5 +53,8 @@ Under development...
 
 **[4]** - *Defining constants, equations, and abbreviated tables of the 1975 U.S. Standard Atmosphere*. NASA Technical Report TR R-459
 
+---
+
 Marcos Rodríguez
+
 2020.
