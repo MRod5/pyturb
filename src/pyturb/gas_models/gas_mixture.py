@@ -1,4 +1,11 @@
 """
+gas_mixture:
+------------
+
+Gas mixture of ideal gases. The approach for the ideal gases may be Perfect or Semiperfect.
+
+MRodriguez 2020
+
 """
 import pyturb.utils.constants as cts
 from pyturb.gas_models.gas import Gas
@@ -11,6 +18,11 @@ import warnings
 
 class GasMixture(object):
     """
+    GasMixture:
+    -----------
+
+
+
     """
 
     def __init__(self, gas_model = "perfect", mixture=None):
@@ -24,7 +36,7 @@ class GasMixture(object):
         else:
             self.gas_model = None
             raise ValueError("gas_model may be 'perfect' or 'semi-perfect', instead received {}".format(gas_model))
-        
+
         self._n_species = 0
         self._gas_species = "mixture"
         self._mixture_gases_columns = ['gas_species', 'gas_properties', 'Ng', 'Mg', 'mg', 'Rg', 'molar_frac', 'mass_frac']
@@ -56,6 +68,7 @@ class GasMixture(object):
     @property
     def n_species(self):
         """
+        Number of different gas species in the gas mixture
         """
         return self._n_species
 
@@ -63,6 +76,7 @@ class GasMixture(object):
     @property
     def mixture_gases(self):
         """
+        Dataframe with the thermodynamic properties of the gas species in the mixture.
         """
         return self._mixture_gases
     
@@ -70,6 +84,7 @@ class GasMixture(object):
     @property
     def Ng(self):
         """
+        Moles of the mixture. [mol]
         """
         return self._Ng
     
@@ -77,6 +92,7 @@ class GasMixture(object):
     @property
     def mg(self):
         """
+        Mass quantity of the mixture. [kg]
         """
         return self._mg
     
@@ -111,6 +127,16 @@ class GasMixture(object):
 
     def add_gas(self, species, moles=None, mass=None):
         """
+        add_gas:
+        --------
+
+        Adds a gas species to the mixture. The amount of gas must be specified
+        in moles or kilograms.
+
+        - species: string. Gas species.
+        - moles: float. Number of moles of the selected gas. If None, then mass must be provided
+        - mass: float. Mass quantity of the selected gas. If none, then moles must be provided
+
         """
 
         if moles is None and mass is None:
@@ -145,6 +171,7 @@ class GasMixture(object):
 
     def _update_mixture_properties(self):
         """
+        Updates mixture properties of the gas mixture
         """
 
         self._n_species = len(self.mixture_gases.index)
