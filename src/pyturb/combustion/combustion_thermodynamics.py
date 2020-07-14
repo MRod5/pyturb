@@ -418,26 +418,41 @@ class Combustion(object):
         for element in reactants:
             if element == "Air":
                 # Air is excluded from the thermodynamic_properties call, its heat of formation is negligible
-                qp += 0
+                qp_r += 0
             else:
                 thermo_prop = ThermoProperties(element)
-                qp += thermo_prop.deltaHf_ref * reactants[element]
+                qp_r += thermo_prop.deltaHf_ref * self.reactants_dictionary[element]
         
 
         # Loop for calculating the formation enthalpies of the products
         products = self.products_dictionary.keys()
 
+        qp_pl = 0
+        qp_pg = 0
         for element in products:
+            print(element)
             if element == "Air":
                 # Air is excluded from the thermodynamic_properties call, its heat of formation is negligible
-                qp += 0
+                qp_pl += 0
+                qp_pg += 0
             else:
                 if element == 'H2O':
-                thermo_prop = ThermoProperties(element)
-                qp -= thermo_prop.deltaHf_ref * reactants[element]
+                    thermo_prop = ThermoProperties('H2O(L)')
+                    qp_pl += thermo_prop.deltaHf_ref * self.products_dictionary[element]
+
+                    thermo_prop = ThermoProperties('H2O')
+                    qp_pg += thermo_prop.deltaHf_ref * self.products_dictionary[element]
+                else:
+                    thermo_prop = ThermoProperties(element)
+                    qp_pl += thermo_prop.deltaHf_ref * self.products_dictionary[element]
+                    qp_pg += thermo_prop.deltaHf_ref * self.products_dictionary[element]
         
-        self._hcomb_g = qp
-        self.
+        
+        self._hcomb_g = qp_r - qp_pg
+        self._hcomb_l = qp_r - qp_pl
+
+        self._HHV = self.hcomb_l / self.fuel.Mg * 1e3
+        self._LHV = self.hcomb_g / self.fuel.Mg * 1e3
 
         # TODO: calculate heat of combustion as -Qp (heat of combustion by definition). If water is formed, 
         # calculate both condensed and vapor water

@@ -18,6 +18,12 @@ print(comb.alpha)
 print(comb.beta)
 print(comb.gamma)
 
+comb.heat_of_combustion()
+print(comb.hcomb_g, comb.hcomb_l)
+print(comb.LHV, comb.HHV)
+print(comb.products_dictionary)
+
+
 oxidmix = GasMixture(gas_model="perfect")
 oxidmix.add_gas('O2', 0.5)
 oxidmix.add_gas('O3', 0.33333)
@@ -27,3 +33,8 @@ comb = Combustion(fuel, oxidmix)
 
 comb.combustion_stoichiometry()
 print(comb.stoichiometric_reaction)
+
+comb.heat_of_combustion()
+print(comb.hcomb_g, comb.hcomb_l)
+print(comb.LHV, comb.HHV)
+print(comb.products_dictionary)
