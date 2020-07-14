@@ -7,11 +7,13 @@ Combustion reaction thermodynamical properties.
 MRodriguez 2020
 
 """
+from pyturb.gas_models.thermo_properties import ThermoProperties
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
 import numpy as np
 import warnings
 
+#TODO: Update gases:
 oxidizers = ['Air', 'O', 'O2', 'O3', 'O2(L)', 'O3(L)']
 
 fuels = ['hydrocarbon', 'C8H18,isooctane', 
@@ -23,6 +25,10 @@ inert_gases = ['He', 'Ar', 'N2',
 
 class Combustion(object):
     """
+    Combustion:
+    -----------
+
+
     """
 
     def __init__(self, fuel, oxidizer):
@@ -76,6 +82,23 @@ class Combustion(object):
         Products of the combustion reaction.
         """
         return self._products
+
+
+    # Class properties for combustion thermodynamics
+    @property
+    def reactants_dictionary(self):
+        """
+        Reactants dictionary [gas_species]: moles
+        """
+        return self._reactants_dictionary
+
+
+    @property
+    def products_dictionary(self):
+        """
+        Products dictionary [gas_species]: molesProducts of the combustion reaction.
+        """
+        return self._products_dictionary
 
 
     @property
@@ -175,7 +198,7 @@ class Combustion(object):
             warnings.warn("Requested oxidizer ({0}) not available. Available oxidizers: {1}".format(self.oxidizer.species, self.oxidizer_list))
             return False
     
-        if not self.fuel.gas_species in self.fuel_list:
+        if not (self.fuel.gas_species in self.fuel_list or self.fuel.gas_species == "mixture"):
             warnings.warn("Requested fuel ({0}) not available. Available fuels: {1}".format(self.fuel.species, self.fuel_list))
             return False
 
@@ -206,7 +229,9 @@ class Combustion(object):
         # TODO: Fuel mixtures will need a rework of alpha, beta, gamma coefficients
 
         # Reactants:
+        # Stoichiometric combustion are calculated per unit mole of fuel. Quantity is adjusted afterwards.
         reactants_dictionary[self.fuel.gas_species] = 1
+
         for element in self.fuel.thermo_prop.chemical_formula:
             if element == "C":
                 alpha = self.fuel.thermo_prop.chemical_formula[element]
@@ -234,6 +259,7 @@ class Combustion(object):
             delta = 1
             has_oxygen = True
             reactants += " + {0:1.3f}(O2 + 79/21 N2)".format(self.oxidizer_fuel_ratio)
+            reactants_dictionary["Air"] = self.oxidizer_fuel_ratio
 
         elif self.oxidizer.gas_species == "O2" or self.oxidizer.gas_species == "O2(L)":
             delta = 0
@@ -241,31 +267,21 @@ class Combustion(object):
                 if element == "O":
                     has_oxygen = True
                     reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
-
-                if element == "N":
-                    delta = 1
-                    reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+                    reactants_dictionary["Air"] = self.oxidizer_fuel_ratio
 
         elif self.oxidizer.gas_species == "O3" or self.oxidizer.gas_species == "O3(L)":
             self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2/3
             if element == "O":
-                    has_oxygen = True
-                    reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
-
-            if element == "N":
-                delta = 1
-                reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+                has_oxygen = True
+                reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
+            reactants_dictionary["O3"] = self.oxidizer_fuel_ratio
 
         elif self.oxidizer.gas_species == "O":
             self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2
             if element == "O":
                 has_oxygen = True
                 reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
-
-            if element == "N":
-                delta = 1
-                reactants += " + {0:1.3f} N{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
-
+            reactants_dictionary["O"] = self.oxidizer_fuel_ratio
 
         else:
             if self.oxidizer.gas_species == "mixture":
@@ -288,10 +304,13 @@ class Combustion(object):
                 self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2 / (a + 2*b + 3*c)
                 if a!=0:
                     reactants += " + {0:1.3f} O".format(a*self.oxidizer_fuel_ratio)
+                    reactants_dictionary["O"] = a*self.oxidizer_fuel_ratio
                 if b!=0:
-                    reactants += " + {0:1.3f} O2".format(b*self.oxidizer_fuel_ratio)
+                    reactants_dictionary["O2"] = b*self.oxidizer_fuel_ratio
                 if c!=0:
                     reactants += " + {0:1.3f} O3".format(c*self.oxidizer_fuel_ratio)
+                    reactants_dictionary["O3"] = c*self.oxidizer_fuel_ratio
+
 
                 for ii, gases in enumerate(self.oxidizer.mixture_gases['gas_species']):
                     if gases in inert_gases:
@@ -306,31 +325,16 @@ class Combustion(object):
             # Hydrocarbon and hydorgen case:
             if has_carbon and not has_hydrogen: 
                 products += "{0:1.0f}CO2".format(alpha)
-                
-                if "CO2" in products_dictionary.keys():
-                    products_dictionary['CO2'] = products_dictionary['CO2'] + alpha
-                else:
-                    products_dictionary['CO2'] = alpha
+                products_dictionary['CO2'] = alpha
 
             elif not has_carbon and has_hydrogen:
                 products += "{0:1.0f}H2O".format(beta/2)
-
-                if "H2O" in products_dictionary.keys():
-                    products_dictionary['H2O'] = products_dictionary['CO2'] + beta/2
-                else:
-                    products_dictionary['H2O'] = beta/2
+                products_dictionary['H2O'] = beta/2
             
             elif has_carbon and has_hydrogen:
                 products += "{0:1.0f}CO2 + {1:1.0f}H2O".format(alpha, beta/2)
-                if "CO2" in products_dictionary.keys():
-                    products_dictionary['CO2'] = products_dictionary['CO2'] + alpha
-                else:
-                    products_dictionary['CO2'] = alpha
-                
-                if "H2O" in products_dictionary.keys():
-                    products_dictionary['H2O'] = products_dictionary['CO2'] + beta/2
-                else:
-                    products_dictionary['H2O'] = beta/2
+                products_dictionary['CO2'] = alpha
+                products_dictionary['H2O'] = beta/2
 
         #else:        
             # TODO: Complete with other ozidizers in the future
@@ -339,6 +343,7 @@ class Combustion(object):
         if delta == 1:
             if self.oxidizer.gas_species == "Air":
                 products += " + {0:1.3f}(79/21 N2)".format(self.oxidizer_fuel_ratio)
+
             else:
                 products += inerts
 
@@ -347,6 +352,8 @@ class Combustion(object):
         self._stoichiometric_reaction = reactants + " --> " + products
         self._reactants = reactants
         self._products = products
+        self._reactants_dictionary_monofuel = reactants_dictionary
+        self._products_dictionary_monofuel = products_dictionary
         
 
         # Coefficients:
@@ -372,20 +379,69 @@ class Combustion(object):
         each. The global reaction stoichiometry is calculated adding up the 
         stoichiometric coefficients of the simpler reaction.
         """
-        # TODO: This function should classify the fuel. If the fuel is a simple molecule,
-        # TODO: call _combustion_stoichiometry_simple_reaction, otherwise identify all
-        # TODO: molecules in the fuel mixture and then call the simple reaction
-        self._combustion_stoichiometry_simple_reaction()
+
+        if self.fuel.gas_species == "mixture":
+            # TODO
+            print("mixture")
+        else:
+            self._combustion_stoichiometry_simple_reaction()
+            self._reactants_dictionary = self._reactants_dictionary_monofuel
+            self._products_dictionary = self._products_dictionary_monofuel
+
         return
         
     
     def heat_of_combustion(self):
         """
-        """
+        Calculates the heat of a combustion under the model of constant pressure
+        combustor:
+            -qp = Sum_i(N_i*h_fi) - Sum_j(N_j*h_fj) [J/mol]
+        Heat of combustion is calculated per unit of mole of fuel and then it is 
+        scaled to the mole quantity of fuel present in the reaction.
 
-        # TODO: calculate heat of combustion as -Qp (heat of comburtion by definition). If water is formed, 
+        If the products contain water, the heat of combustion is calculated assuming
+        all water is condensed (l) and vaporized (g), providing two different values
+        of the heat of combustion:
+            - hcomb_g: heat of combustion with H2O(g) vaporized [J/mol]
+            - hcomb_l: heat of combustion with H2O(l) condensed [J/mol]
+
+        With the heat of combustion per unit mole, the Higher Heating Value and Lower
+        Heating Value may be calculated:
+            HHV = LHV + NH2O*MH2O*hfg / (Nfuel*Mfuel) [MJ/kg]
+            LHV = hcomb_g / Mfuel * 1e3 g/kg * 1e-6 MJ/J [MJ/kg]
+        """
+        
+        # Loop for calculating the formation enthalpies of the reactants:
+        qp_r = 0
+        reactants = self.reactants_dictionary.keys()
+        
+        for element in reactants:
+            if element == "Air":
+                # Air is excluded from the thermodynamic_properties call, its heat of formation is negligible
+                qp += 0
+            else:
+                thermo_prop = ThermoProperties(element)
+                qp += thermo_prop.deltaHf_ref * reactants[element]
+        
+
+        # Loop for calculating the formation enthalpies of the products
+        products = self.products_dictionary.keys()
+
+        for element in products:
+            if element == "Air":
+                # Air is excluded from the thermodynamic_properties call, its heat of formation is negligible
+                qp += 0
+            else:
+                if element == 'H2O':
+                thermo_prop = ThermoProperties(element)
+                qp -= thermo_prop.deltaHf_ref * reactants[element]
+        
+        self._hcomb_g = qp
+        self.
+
+        # TODO: calculate heat of combustion as -Qp (heat of combustion by definition). If water is formed, 
         # calculate both condensed and vapor water
 
         # TODO: With the heat of combustion calculated, obtain the HHV and LHV
 
-        
+        return
