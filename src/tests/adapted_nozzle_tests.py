@@ -1,3 +1,16 @@
+"""
+pyturb
+Adapted nozzle tests tests
+
+M Rodriguez. 2020
+"""
+
+import sys
+from sys import path
+from os.path import dirname as dir
+sys.path.append(dir(sys.path[0]))
+
+
 from pyturb.gas_models.isentropic_flow import IsentropicFlow
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.power_plant.nozzle import Nozzle
@@ -20,7 +33,7 @@ T0t = isent_flow.stag_temp_from_mach(M0, T0)
 
 nozzle = Nozzle(air)
 nozzle.initialize_nozzle(G0, p0t, T0t, Ae=Ae)
-nozzle.solve_adapted_nozzle(ps=p0, As=0.85)
+nozzle.solve_from_static_exit_pressure(ps=p0, As=0.85)
 
 print('--- ADAPTED NOZZLE ----------------------------------------------------------------------')
 print('M7={0:5.3f}, p7t={1:8.1f}Pa, T7t={2:5.1f}K, rho7t={3:6.4f}kg/m**3'.format(nozzle.mach_e, nozzle.p_et, nozzle.T_et, nozzle.rho_et))
@@ -35,7 +48,7 @@ print('p_star={0:8.1f}Pa, T_star={1:5.1f}, A_star={2:8.4f}'.format(nozzle.p_s_st
 
 
 nozzle.initialize_nozzle(G0, p0t, T0t)
-nozzle.solve_adapted_nozzle(ps=p0, adiab_efficiency=1)
+nozzle.solve_from_static_exit_pressure(ps=p0, adiab_efficiency=1)
 print('--- ADAPTED NOZZLE -------------------------------------------------------------------')
 print('M7={0:5.3f}, p7t={1:8.1f}Pa, T7t={2:5.1f}K, rho7t={3:6.4f}kg/m**3'.format(nozzle.mach_e, nozzle.p_et, nozzle.T_et, nozzle.rho_et))
 print('v7={0:5.2f}, p7={1:8.1f}Pa, T7={2:5.1f}K, rho7={3:6.4f}kg/m**3'.format(nozzle.vel_e, nozzle.p_e, nozzle.T_e, nozzle.rho_e))

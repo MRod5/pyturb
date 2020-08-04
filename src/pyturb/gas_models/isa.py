@@ -399,7 +399,7 @@ def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
     # Check if temperature is array/list or discrete value:
     if type(temperature) in [np.ndarray, list]:
         # Array or list of temperatures:
-        isa_dev = isa_dev*np.ones_like(height, dtype=np.float64) if np.size(isa_dev)==1 else isa_dev
+        isa_dev = isa_dev*np.ones_like(temperature, dtype=np.float64) if np.size(isa_dev)==1 else isa_dev
         
         height = []
 

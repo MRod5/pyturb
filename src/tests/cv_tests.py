@@ -1,3 +1,15 @@
+"""
+pyturb
+Control volume tests
+
+M Rodriguez. 2020
+"""
+
+import sys
+from sys import path
+from os.path import dirname as dir
+sys.path.append(dir(sys.path[0]))
+
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.power_plant.intake import Intake
 from pyturb.power_plant.nozzle import Nozzle
@@ -32,7 +44,7 @@ T7t = intake.T_st
 
 nozzle = Nozzle(air)
 nozzle.initialize_nozzle(G, p7t, T7t)
-nozzle.solve_adapted_nozzle(ps=p0, As=None)
+nozzle.solve_from_static_exit_pressure(ps=p0, As=None)
 print('--- NOZZLE ------------------------------------------------------------------------------')
 print('M7={0:5.3f}, p7t={1:8.1f}Pa, T7t={2:5.1f}K, rho7t={3:6.4f}kg/m**3'.format(nozzle.mach_e, nozzle.p_et, nozzle.T_et, nozzle.rho_et))
 print('M8={0:5.3f}, p8t={1:8.1f}Pa, T8t={2:5.1f}K, rho8t={3:6.4f}kg/m**3'.format(nozzle.mach_s, nozzle.p_st, nozzle.T_st, nozzle.rho_st))

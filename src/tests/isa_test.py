@@ -5,6 +5,11 @@ isa.py tests
 M Rodriguez 2020
 """
 
+import sys
+from sys import path
+from os.path import dirname as dir
+sys.path.append(dir(sys.path[0]))
+
 import numpy as np
 import pyturb.gas_models.isa  as isa
 

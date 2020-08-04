@@ -1,5 +1,15 @@
 """
+pyturb
+isentropic_flow tests
+
+M Rodriguez. 2020
 """
+
+import sys
+from sys import path
+from os.path import dirname as dir
+sys.path.append(dir(sys.path[0]))
+
 
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas, SemiperfectIdealGas
 from pyturb.gas_models.isentropic_flow import IsentropicFlow
