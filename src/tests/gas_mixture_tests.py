@@ -5,11 +5,6 @@ Gas Mixture tests
 M Rodriguez. 2020
 """
 
-import sys
-from sys import path
-from os.path import dirname as dir
-sys.path.append(dir(sys.path[0]))
-
 import pyturb.utils.constants as cts
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.gas_mixture import GasMixture

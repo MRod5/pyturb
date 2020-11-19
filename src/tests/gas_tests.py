@@ -5,11 +5,6 @@ Gas tests
 M Rodriguez. 2020
 """
 
-import sys
-from sys import path
-from os.path import dirname as dir
-sys.path.append(dir(sys.path[0]))
-
 import numpy as np
 import pyturb.utils.constants as cts
 import pyturb.utils.units as units
