@@ -2,7 +2,14 @@
 
 ---
 
-Under development...
+## How to use pyTurb:
+
+The easiest way to use pyTurb is to install it via pip:
+
+´pip install pyturb´
+
+With pyTurb installed, you can import any *Gas Model*, *Combustion thermodynamics* or *Power Plant* features. You can find use-cases and examples about how to execute pyTurb at the `notebooks` folders.
+
 
 ## Control Volumes:
 
