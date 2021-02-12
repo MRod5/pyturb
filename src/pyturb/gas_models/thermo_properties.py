@@ -123,3 +123,17 @@ class ThermoProperties():
                             self.species_list.append(line.split()[0])
 
             return self.species_list
+
+
+    def is_available(self, species):
+            """
+            """
+
+            if type(species) is str:
+                if species in self.species_list:
+                    return True
+                else:
+                    return False
+                    
+            else:
+                raise TypeError('Gas species must be of type str, instead {} was provided'.format(type(species)))
