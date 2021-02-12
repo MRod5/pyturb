@@ -103,3 +103,23 @@ class ThermoProperties():
                     pass
 
                 
+    def get_species_name(self):
+            """
+            """
+            self.species_list = []
+
+            with open(self.nasa_thermoprop, 'r') as nasa_file:
+                keep_searching = True
+
+                while keep_searching:
+                    line = nasa_file.readline()
+
+                    if line=='':
+                        keep_searching = False
+                    else:
+                        try:
+                            float(line.split()[0][:2])
+                        except:
+                            self.species_list.append(line.split()[0])
+
+            return self.species_list
