@@ -20,7 +20,7 @@ class ThermoProperties():
         
         thermoprop_dir = os.path.dirname(__file__) 
         self.nasa_thermoprop = os.path.join(thermoprop_dir, r'./nasa9.dat')
-        self.species_list = self.get_species_name()
+        self.species_list = self.__get_species_name()
 
         if species is not None:
             if type(species) is str:
@@ -112,7 +112,7 @@ class ThermoProperties():
                     pass
 
                 
-    def get_species_name(self):
+    def __get_species_name(self):
         """
         """
         self.species_list = []
@@ -129,7 +129,8 @@ class ThermoProperties():
                     try:
                         float(line.split()[0][:2])
                     except:
-                        self.species_list.append(line.split()[0])
+                        if line.split()[0][0]!="!":
+                            self.species_list.append(line.split()[0])
 
         return self.species_list
 
