@@ -14,14 +14,25 @@ import os
 import numpy as np
 
 class ThermoProperties():
-    def __init__(self, species):
+    def __init__(self, species=None):
+        """
+        """
+        
         thermoprop_dir = os.path.dirname(__file__) 
         self.nasa_thermoprop = os.path.join(thermoprop_dir, r'./nasa9.dat')
-        self.species = species
+        self.species_list = self.get_species_name()
+
+        if species is not None:
+            if type(species) is str:
+                self.species = species
+            
+                self.get_species_data()
+            else:
+                raise TypeError("species must be type str, instead {} was provided".format(type(species)))
+        else:
+            return None
         
-        self.get_species_data()
-        
-        return
+        return None
         
         
     def __str__(self):
@@ -33,8 +44,6 @@ class ThermoProperties():
             printable_thermoprop += "                 {0:10.3e}   {1:10.3e}  {2:10.3e}  {3:10.3e}  {4:10.3e}  {5:10.3e}  {6:10.3e}\n".format(*self.coefficients[ii])
             printable_thermoprop += "\n"
         
-            
-            
         return printable_thermoprop
 
 
@@ -104,36 +113,36 @@ class ThermoProperties():
 
                 
     def get_species_name(self):
-            """
-            """
-            self.species_list = []
+        """
+        """
+        self.species_list = []
 
-            with open(self.nasa_thermoprop, 'r') as nasa_file:
-                keep_searching = True
+        with open(self.nasa_thermoprop, 'r') as nasa_file:
+            keep_searching = True
 
-                while keep_searching:
-                    line = nasa_file.readline()
+            while keep_searching:
+                line = nasa_file.readline()
 
-                    if line=='':
-                        keep_searching = False
-                    else:
-                        try:
-                            float(line.split()[0][:2])
-                        except:
-                            self.species_list.append(line.split()[0])
-
-            return self.species_list
-
-
-    def is_available(self, species):
-            """
-            """
-
-            if type(species) is str:
-                if species in self.species_list:
-                    return True
+                if line=='':
+                    keep_searching = False
                 else:
-                    return False
-                    
+                    try:
+                        float(line.split()[0][:2])
+                    except:
+                        self.species_list.append(line.split()[0])
+
+        return self.species_list
+
+    
+    def is_available(self, species):
+        """
+        """
+
+        if type(species) is str:
+            if species in self.species_list:
+                return True
             else:
-                raise TypeError('Gas species must be of type str, instead {} was provided'.format(type(species)))
+                return False
+                
+        else:
+            raise TypeError('Gas species must be of type str, instead {} was provided'.format(type(species)))
