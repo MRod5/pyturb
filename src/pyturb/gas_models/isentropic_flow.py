@@ -415,8 +415,10 @@ class IsentropicFlow(object):
             Tt = stagnation_temperature
             
 
-        difcpT = (self.fluid.cp(Tt)*Tt - self.fluid.cp(T)*T)
-        vel = np.sqrt(2*difcpT)
+        #difcpT = (self.fluid.cp(Tt)*Tt - self.fluid.cp(T)*T)
+        #vel = np.sqrt(2*difcpT)
+
+        vel = np.sqrt(2*self.fluid.cp(T)*(Tt-T))
         
         return vel
 
