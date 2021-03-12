@@ -2,13 +2,26 @@
 
 ---
 
-## How to use pyTurb:
+## How to use **pyTurb**:
 
-The easiest way to use pyTurb is to install it with pip. Download pyTurb and then, from the source folder, type in a command window:
+The easiest way to use **pyTurb** is to install it with pip and the `setup.py` file. Download **pyTurb** and then, from the source folder, type in a command window:
 
-´pip install -e .´
+>`pip install .`
+
+If you want to have **pyTurb** in editable mode:
+
+>`pip install -e .`
 
 With pyTurb installed, you can import any *Gas Model*, *Combustion thermodynamics* or *Power Plant* features. You can find use-cases and examples about how to execute pyTurb at the `notebooks` folders.
+
+## Notebooks with pyTurb examples:
+
+You will find different Notebooks with examples about to use **pyTurb**:
+- `ISA examples.ipynb`: Standard atmosphere example (temperature, pressure, density and altitude for different layers).
+- `Perfect and Semiperfect gas models.ipynb`: gas constant, specific heat capacity, heat ratio etc. Examples as perfect gas (constant values) or semiperfect gas (as a function of the temperature).
+- `Gas Mixtures`: Mixtures of different pure substances. May be a perfect (constant values) or semiperfect (as a function of temperature) gas.
+- `Isentropic flow relations.ipynb`: Examples about basic isentropic flow relations: stagnation temperature, stagnation pressue, Mach number, sound speed, free stream velocity...
+- ...
 
 
 ## Control Volumes:
