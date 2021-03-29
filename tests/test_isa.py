@@ -50,3 +50,7 @@ print(hp75, hp90)
 
 np.testing.assert_almost_equal(hp75,7500)
 np.testing.assert_almost_equal(hp90,9000)
+
+T = np.arange(273.15, 240, -5)
+h = isa.height_from_temperature_isa(T)
+print(h)
