@@ -40,3 +40,7 @@ print(semiperfect_air.cp(2000)-semiperfect_air.cv(2000))
 
 np.testing.assert_approx_equal(semiperfect_air.cp(1000)-semiperfect_air.cv(1000), semiperfect_air.Rg,significant=10)
 np.testing.assert_approx_equal(semiperfect_air.cp(2000)-semiperfect_air.cv(2000), semiperfect_air.Rg,significant=10)
+
+
+temperature = np.array([200, cts.T_ref, cts.T_ref_SL, 1000, 1500, 2000, 2500])
+print(semiperfect_air.cp(temperature))
