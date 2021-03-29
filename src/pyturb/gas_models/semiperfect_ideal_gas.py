@@ -131,7 +131,7 @@ class SemiperfectIdealGas(Gas):
                 # min_T_interval <= temperature max_T_interval
 
                 mask_temp = temp_range[0]<=temperature
-                temp_poly = np.array([temperature**(-2), temperature**(-1), 1, temperature, temperature**(2), temperature**(3), temperature**(4)])
+                temp_poly = np.array([temperature**(-2), temperature**(-1), 1, temperature, temperature**(2), temperature**(3), temperature**(4)], dtype="object")
                 cp_ = cp_ + np.dot(coeffs, temp_poly) * mask_temp
             
         return cp_

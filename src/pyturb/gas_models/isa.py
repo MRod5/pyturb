@@ -431,12 +431,12 @@ def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
                 if len(height_)==1:
                     height_ = height_[0]
                 else:
-                    height_ = np.asarray(height_[:])
+                    height_ = np.asarray(height_[:], dtype="object")
                 
                 height.append(height_)
         
         # Output height array:
-        height = np.asarray(height)
+        height = np.asarray(height, dtype="object")
         
     elif type(temperature) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
          # Temperature is a discrete value:
