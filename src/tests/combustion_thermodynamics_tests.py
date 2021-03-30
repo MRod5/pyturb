@@ -49,3 +49,13 @@ comb.heat_of_combustion()
 print(comb.hcomb_g, comb.hcomb_l)
 print(comb.LHV, comb.HHV)
 print(comb.products_dictionary)
+
+
+C2H6O = PerfectIdealGas('CH3OCH3')
+O2 = PerfectIdealGas('O2')
+C2H6O_comb = Combustion(C2H6O, O2)
+
+C2H6O_comb.combustion_stoichiometry()
+C2H6O_comb.heat_of_combustion()
+print(C2H6O_comb.stoichiometric_reaction)
+print(C2H6O_comb.hcomb_l)

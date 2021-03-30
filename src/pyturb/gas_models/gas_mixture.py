@@ -203,7 +203,7 @@ class GasMixture(object):
         """
 
         if temperature is None:
-            if not(isinstance(self.gas_model, SemiperfectIdealGas)):
+            if isinstance(self.gas_model, SemiperfectIdealGas):
                 raise ValueError("If gas model is semi-perfect a temperature must be provided to calculate the cp.")
 
         cp_ = 0
@@ -285,7 +285,7 @@ class GasMixture(object):
         """
 
         if temperature is None:
-            if not(isinstance(self.gas_model, SemiperfectIdealGas)):
+            if isinstance(self.gas_model, SemiperfectIdealGas):
                 raise ValueError("If gas model is semi-perfect a temperature must be provided to calculate the cp.")
 
         h0_ = 0
@@ -303,7 +303,7 @@ class GasMixture(object):
         """
 
         if temperature is None:
-            if not(isinstance(self.gas_model, SemiperfectIdealGas)):
+            if isinstance(self.gas_model, SemiperfectIdealGas):
                 raise ValueError("If gas model is semi-perfect a temperature must be provided to calculate the cp.")
 
         h0_ = self.h0_molar(temperature) * 1e3/self.Mg
