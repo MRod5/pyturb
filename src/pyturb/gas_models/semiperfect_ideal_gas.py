@@ -122,18 +122,18 @@ class SemiperfectIdealGas(Gas):
         tmin = np.min(self.thermo_prop.temp_range)
         tmax = np.max(self.thermo_prop.temp_range)
 
-        if tmin>temperature or tmax<temperature:
+        if np.any(tmin>temperature) or np.any(tmax<temperature):
             raise ValueError("Gas temperature ({0}K) out of implemented limits [{1},{2}]K".format(temperature, tmin, tmax))
         else:
+            cp_ = np.zeros_like(temperature)
             for (temp_range, coeffs) in zip(self.thermo_prop.temp_range, self.thermo_prop.coefficients):
                 # For all the temperature intervals of the gas species, pick the correct one:
                 # min_T_interval <= temperature max_T_interval
 
-                if temp_range[0]<=temperature<temp_range[1]:
-                    # Calculate 7 terms polynomial (non-dimensional):
-                    temp_poly = np.array([temperature**(-2), temperature**(-1), 1, temperature, temperature**(2), temperature**(3), temperature**(4)])
-                    cp_ = np.dot(coeffs, temp_poly)
-                    
+                mask_temp = np.logical_and(temp_range[0]<=temperature, temp_range[1]>= temperature)
+                temp_poly = np.array([temperature**(-2), temperature**(-1), 1, temperature, temperature**(2), temperature**(3), temperature**(4)], dtype="object")
+                cp_ = cp_ + np.dot(coeffs, temp_poly) * mask_temp
+            
         return cp_
 
 

@@ -45,7 +45,7 @@ class Gas(object):
         molecules and mixes considered in "NASA Glenn Coefficients for Calculating Thermodynamic
         Properties of Individual Species".
         """
-        raise NotImplementedError
+        return NotImplementedError
 
 
     @property

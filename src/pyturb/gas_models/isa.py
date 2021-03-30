@@ -428,11 +428,15 @@ def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
                             height_.append(h)
                 
                 # Output heights for current temperature:
-                height_ = np.asarray(height_[:])
+                if len(height_)==1:
+                    height_ = height_[0]
+                else:
+                    height_ = np.asarray(height_[:], dtype="object")
+                
                 height.append(height_)
         
         # Output height array:
-        height = np.asarray(height)
+        height = np.asarray(height, dtype="object")
         
     elif type(temperature) in  [float, int, np.float64, np.float32, np.int64, np.int32]:
          # Temperature is a discrete value:
@@ -480,7 +484,10 @@ def height_from_temperature_isa(temperature, isa_dev=0, layer = None):
         print('Input pressure ({}) is not numeric or np.ndarray'.format(height))
         height = np.nan
     
-    return height
+    if type(height) is np.ndarray and len(height)==1:
+        return height[0]
+    else:
+        return height
 
 
 def height_from_pressure_isa(pressure, isa_dev=0):

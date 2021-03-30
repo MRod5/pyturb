@@ -4,7 +4,6 @@ units.py tests
 
 M Rodriguez. 2020
 """
-
 import numpy as np
 import pyturb.utils.units as units
 import pyturb.utils.constants as cts
@@ -31,4 +30,11 @@ np.testing.assert_almost_equal(units.Torr_to_Pa, 101325/760)
 np.testing.assert_almost_equal(units.Pa_to_mmHg*cts.p_ref_SL, 760)
 
 
-# 
+# Distance
+np.testing.assert_almost_equal(33000*units.ft_to_m, 10058.4)
+np.testing.assert_almost_equal(1852*units.m_to_nm, 1)
+
+
+# Speed
+np.testing.assert_almost_equal(350*units.mph_to_ms, 156.464)
+np.testing.assert_almost_equal(350*units.kts_to_ms, 648.2*units.kmh_to_ms)
