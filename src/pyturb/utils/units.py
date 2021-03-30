@@ -70,6 +70,8 @@ kts_to_ms = 1852/3600   # A Knot is a nautical mile per hour. Conversion to mete
 ms_to_kts = 1/kts_to_ms   # Meters per second to knots
 mph_to_ms = 1609.344/3600 # Statute  mile per hour to meters per second
 ms_to_mph = 1/mph_to_ms # Meters per second to statute miles per hour
+kmh_to_ms = 1/3.6 # kmh to meters
+ms_ts_kmh = 3.6 # kmh to meters
 
 
 # Mass:
