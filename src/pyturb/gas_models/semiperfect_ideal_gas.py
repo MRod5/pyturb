@@ -130,7 +130,7 @@ class SemiperfectIdealGas(Gas):
                 # For all the temperature intervals of the gas species, pick the correct one:
                 # min_T_interval <= temperature max_T_interval
 
-                mask_temp = temp_range[0]<=temperature
+                mask_temp = np.logical_and(temp_range[0]<=temperature, temp_range[1]>= temperature)
                 temp_poly = np.array([temperature**(-2), temperature**(-1), 1, temperature, temperature**(2), temperature**(3), temperature**(4)], dtype="object")
                 cp_ = cp_ + np.dot(coeffs, temp_poly) * mask_temp
             
