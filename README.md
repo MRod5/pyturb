@@ -1,7 +1,21 @@
 # pyTurb: A python Gas Turbine package!
 
----
 
+**pyTurb** is a Python module for Thermodynamics, Combustion and Power Plants. In **pyTurb** you will find:
+- ISA model (Standard Atmosphere)
+- Thermodynamic properties of gases (NASA Glenn Coefficients)
+- Perfect and Semiperfect Ideal Gas relations and Gas Mixtures
+- Isentropic Flow relations
+- Combustion properties and kinetics
+- Power Plant control volumes (nozzle, intake, combustor...)
+- Propulsion equations (jet engine performance)
+
+You will wind examples about how to use pyTurb in the *Notebooks* folder.
+
+pyTurb is currently under development. In the near future, compressor, turbine and more combustion features will be added, as well as jet engine performance equations.
+
+
+---
 ## How to use pyTurb:
 
 The easiest way to use pyTurb is to install it via pip:
