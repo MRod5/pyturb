@@ -351,6 +351,9 @@ class Combustion(object):
         return
 
 
+    
+
+
 # Class properties for combustion thermodynamics
     @property
     def reactants(self):
@@ -471,3 +474,19 @@ class Combustion(object):
         Combustion Enthalpy, considered all products are vaporized. [J/mol]
         """
         return self._hcomb_g
+
+    
+    @property
+    def Tad_st(self):
+        """
+        Adiabatic flame temperature for the stoichiometric reaction. [K]
+        """
+        return self._Tad_st
+
+
+    @property
+    def Tad(self):
+        """
+        Adiabatic flame temperature. [K]
+        """
+        return self._Tad
