@@ -37,13 +37,13 @@ class Combustion(object):
         """
 
         if not(isinstance(fuel, PerfectIdealGas) or isinstance(fuel, SemiperfectIdealGas) or isinstance(fuel, IdealLiquid)):
-            # Check the flow is a Perfect or a Semiperfect gas fom pyturb
-            raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas or PerfectLiquid. Instead received {}".format(fluid))
+            # Check the fluid is a Perfect or a Semiperfect gas fom pyturb
+            raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas or PerfectLiquid. Instead received {}".format(fuel))
 
 
-        if not(isinstance(fuel, PerfectIdealGas) or isinstance(fuel, SemiperfectIdealGas) or isinstance(fuel, IdealLiquid)):
-            # Check the flow is a Perfect or a Semiperfect gas from pyturb
-            raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas or PerfectLiquid. Instead received {}".format(fluid))
+        if not(isinstance(oxidizer, PerfectIdealGas) or isinstance(fuel, SemiperfectIdealGas) or isinstance(fuel, IdealLiquid)):
+            # Check the fluid is a Perfect or a Semiperfect gas from pyturb
+            raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas or PerfectLiquid. Instead received {}".format(oxidizer))
 
         
         self.oxidizer_list = oxidizers
