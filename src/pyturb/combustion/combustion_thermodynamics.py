@@ -16,7 +16,7 @@ import warnings
 #TODO: Update gases:
 oxidizers = ['Air', 'O', 'O2', 'O3', 'O2(L)', 'O3(L)']
 
-fuels = ['hydrocarbon', 'C8H18,isooctane', 
+fuels = ['hydrocarbon',
          'CH4', 'C2H6', 'C3H8', 'C4H10', 'C5H12', 'C6H14', 'C7H16', 'C8H18',
          'CH4O', 'CH3OCH3',
          'H2']
@@ -74,10 +74,18 @@ class Combustion(object):
         """
 
         if not (self.oxidizer.gas_species in self.oxidizer_list or self.oxidizer.gas_species == "mixture"):
+            for oxidizer in self.oxidizer_list:
+                if oxidizer in self.oxidizer.gas_species:
+                    return True
+
             warnings.warn("Requested oxidizer ({0}) not available. Available oxidizers: {1}".format(self.oxidizer.gas_species, self.oxidizer_list))
             return False
     
         if not (self.fuel.gas_species in self.fuel_list or self.fuel.gas_species == "mixture"):
+            for fuel in self.fuel_list:
+                if fuel in self.fuel.gas_species:
+                    return True
+
             warnings.warn("Requested fuel ({0}) not available. Available fuels: {1}".format(self.fuel.gas_species, self.fuel_list))
             return False
 
