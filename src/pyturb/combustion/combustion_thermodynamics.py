@@ -10,6 +10,7 @@ MRodriguez 2020
 from pyturb.gas_models.thermo_properties import ThermoProperties
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
+from pyturb.utils import units
 import numpy as np
 import warnings
 
@@ -351,10 +352,29 @@ class Combustion(object):
         return
 
 
-    
+    def stoich_adiabatic_flame_temp(self, T0):
+        """
+        Adiabatic flame temperatura for stoichiometric reaction:
+
+        The adiabatic flame temperature is calculated assuming all the heat of the combustion is invested in
+        heating the products and only the products, with no heat losses (adiabatic volume).
+
+        Is the reaction is in stoichiometric FAR, then the adiabatic flame temperature is the highest temperature
+        that can be obtained with the provided fuel and oxidizers.
+
+        Calculated temperature is obtained in Kelvin [K]
+        """
+        T0_ = units.celsius_to_kelvin(T0)
+        Tad = T0_ 
+        
+        self._Tad_st = Tad
+
+        # TODO: Declare temperature of the reactants and of the combustor
+
+        return 
 
 
-# Class properties for combustion thermodynamics
+    # Class properties for combustion thermodynamics
     @property
     def reactants(self):
         """
