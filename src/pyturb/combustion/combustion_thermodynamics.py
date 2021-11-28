@@ -14,15 +14,17 @@ import numpy as np
 import warnings
 
 #TODO: Update gases:
-oxidizers = ['Air', 'O', 'O2', 'O3', 'O2(L)', 'O3(L)']
+oxidizers = ['Air', 'O', 'O2', 'O3']
 
 fuels = ['hydrocarbon',
          'CH4', 'C2H6', 'C3H8', 'C4H10', 'C5H12', 'C6H14', 'C7H16', 'C8H18',
+         'C9H19', 'C10H8',
          'CH4O', 'CH3OCH3',
          'H2']
 
 inert_gases = ['He', 'Ar', 'N2',
-               'CO2', 'CO']
+               'CO2', 'CO',
+               'H2O']
 
 class Combustion(object):
     """
