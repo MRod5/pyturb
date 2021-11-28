@@ -68,128 +68,6 @@ class Combustion(object):
         return
 
 
-    # Class properties for combustion thermodynamics
-    @property
-    def reactants(self):
-        """
-        Reactants of the combustion reaction.
-        """
-        return self._reactants
-
-
-    @property
-    def products(self):
-        """
-        Products of the combustion reaction.
-        """
-        return self._products
-
-
-    # Class properties for combustion thermodynamics
-    @property
-    def reactants_dictionary(self):
-        """
-        Reactants dictionary [gas_species]: moles
-        """
-        return self._reactants_dictionary
-
-
-    @property
-    def products_dictionary(self):
-        """
-        Products dictionary [gas_species]: molesProducts of the combustion reaction.
-        """
-        return self._products_dictionary
-
-
-    @property
-    def stoichiometric_reaction(self):
-        """
-        Stoichiometric reaction of the combustion reaction.
-        """
-        return self._stoichiometric_reaction
-
-
-    @property
-    def alpha(self):
-        """
-        Moles of carbon present in the fuel molecule, per mole of fuel.
-        """
-        return self._alpha
-
-    
-    @property
-    def beta(self):
-        """
-        Moles of hydrogen present in the fuel molecule, per mole of fuel.
-        """
-        return self._beta
-
-
-    @property
-    def gamma(self):
-        """
-        Moles of oxygen present in the fuel molecule, per mole of fuel.
-        """
-        return self._gamma
-
-
-    @property
-    def delta(self):
-        """
-        Nytrogen present in the oxyder. 1 if true, 0 if false.
-        """
-        return self._delta
-
-
-    @property
-    def oxidizer_fuel_ratio(self):
-        """
-        Oxidizer to fuel stoichiometric molar ratio.
-        """
-        return self._oxidizer_fuel_ratio
-
-
-    @property
-    def stoich_far(self):
-        """
-        Stoichiometric fuel-air ratio.
-        """
-        return self._stoich_far
-
-    
-    @property
-    def LHV(self):
-        """
-        Lower heating value. [J/kg]
-        """
-        return self._LHV
-
-
-    @property
-    def HHV(self):
-        """
-        Higher heating value. [J/kg]
-        """
-        return self._HHV
-
-
-    @property
-    def hcomb_l(self):
-        """
-        Combustion Enthalpy, considering all products are condensed. [J/mol]
-        """
-        return self._hcomb_l
-
-
-    @property
-    def hcomb_g(self):
-        """
-        Combustion Enthalpy, considered all products are vaporized. [J/mol]
-        """
-        return self._hcomb_g
-
-
     def _classify_reactants(self):
         """
         Check fuel and oxidizer species.
@@ -461,3 +339,125 @@ class Combustion(object):
         # TODO: With the heat of combustion calculated, obtain the HHV and LHV
 
         return
+
+
+# Class properties for combustion thermodynamics
+    @property
+    def reactants(self):
+        """
+        Reactants of the combustion reaction.
+        """
+        return self._reactants
+
+
+    @property
+    def products(self):
+        """
+        Products of the combustion reaction.
+        """
+        return self._products
+
+
+    # Class properties for combustion thermodynamics
+    @property
+    def reactants_dictionary(self):
+        """
+        Reactants dictionary [gas_species]: moles
+        """
+        return self._reactants_dictionary
+
+
+    @property
+    def products_dictionary(self):
+        """
+        Products dictionary [gas_species]: molesProducts of the combustion reaction.
+        """
+        return self._products_dictionary
+
+
+    @property
+    def stoichiometric_reaction(self):
+        """
+        Stoichiometric reaction of the combustion reaction.
+        """
+        return self._stoichiometric_reaction
+
+
+    @property
+    def alpha(self):
+        """
+        Moles of carbon present in the fuel molecule, per mole of fuel.
+        """
+        return self._alpha
+
+    
+    @property
+    def beta(self):
+        """
+        Moles of hydrogen present in the fuel molecule, per mole of fuel.
+        """
+        return self._beta
+
+
+    @property
+    def gamma(self):
+        """
+        Moles of oxygen present in the fuel molecule, per mole of fuel.
+        """
+        return self._gamma
+
+
+    @property
+    def delta(self):
+        """
+        Nytrogen present in the oxyder. 1 if true, 0 if false.
+        """
+        return self._delta
+
+
+    @property
+    def oxidizer_fuel_ratio(self):
+        """
+        Oxidizer to fuel stoichiometric molar ratio.
+        """
+        return self._oxidizer_fuel_ratio
+
+
+    @property
+    def stoich_far(self):
+        """
+        Stoichiometric fuel-air ratio.
+        """
+        return self._stoich_far
+
+    
+    @property
+    def LHV(self):
+        """
+        Lower heating value. [J/kg]
+        """
+        return self._LHV
+
+
+    @property
+    def HHV(self):
+        """
+        Higher heating value. [J/kg]
+        """
+        return self._HHV
+
+
+    @property
+    def hcomb_l(self):
+        """
+        Combustion Enthalpy, considering all products are condensed. [J/mol]
+        """
+        return self._hcomb_l
+
+
+    @property
+    def hcomb_g(self):
+        """
+        Combustion Enthalpy, considered all products are vaporized. [J/mol]
+        """
+        return self._hcomb_g
