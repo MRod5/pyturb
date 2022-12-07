@@ -7,23 +7,23 @@ Combustion reaction thermodynamical properties.
 MRodriguez 2020
 
 """
-from pyturb.gas_models.thermo_properties import ThermoProperties
-from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
-from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
+from pyturb.gas_models import ThermoProperties
+from pyturb.gas_models import PerfectIdealGas
+from pyturb.gas_models import SemiperfectIdealGas
 from pyturb.gas_models import GasMixture
 from pyturb.utils import units
 import numpy as np
 import warnings
 
 #TODO: Update gases:
-oxidizers = ['Air', 'O', 'O2', 'O3']
+oxidizers = ['Air', 'O', 'O2', 'O3'] # Allowed oxidizers
 
 fuels = ['hydrocarbon',
          'CH4', 'C2H6', 'C3H8', 'C4H10', 'C5H12', 'C6H14', 'C7H16', 'C8H18',
          'C9H19', 'C10H8',
          'CH4O', 'CH3OCH3',
          'C2H2',
-         'H2']
+         'H2'] # Allowed fuels
 
 inert_gases = ['He', 'Ar', 'N2',
                'CO2', 'CO',
@@ -34,11 +34,17 @@ class Combustion(object):
     Combustion:
     -----------
 
+    This module is under development.
+
+    Calculates the combustion between fuel and oxidizer.
+
+    MRodriguez. 2020
 
     """
 
     def __init__(self, fuel, oxidizer):
         """
+        Initiates a Combustion(). Fuel and Oxidizer must be provided.
         """
 
         if not(isinstance(fuel, PerfectIdealGas) or isinstance(fuel, SemiperfectIdealGas) or isinstance(fuel, IdealLiquid)):
@@ -51,15 +57,15 @@ class Combustion(object):
             # Check the fluid is a Perfect or a Semiperfect gas from pyturb
             raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas or PerfectLiquid. Instead received {}".format(oxidizer))
 
-        
+        # Fuel and oxidizer lists:
         self.oxidizer_list = oxidizers
         self.fuel_list = fuels
 
-
+        # Selected fuel and oxidizer for combustion reaction
         self.fuel = fuel
         self.oxidizer = oxidizer
 
-
+        # Check if reactants are allowed fuels and oxidizers:
         reactants_status = self._classify_reactants()
 
         if not reactants_status:
@@ -76,9 +82,10 @@ class Combustion(object):
 
     def _classify_reactants(self):
         """
-        Check fuel and oxidizer species.
+        Check fuel and oxidizer species. Oxidizer can be a gax mixtures with at least one of the allowed oxidizers.
         """
 
+        # Check for the oxidizers:
         reactants_check = False
         if not (self.oxidizer.gas_species in self.oxidizer_list or self.oxidizer.gas_species == "mixture"):
             for oxidizer in self.oxidizer_list:
@@ -90,6 +97,7 @@ class Combustion(object):
                 warnings.warn("Requested oxidizer ({0}) not available. Available oxidizers: {1}".format(self.oxidizer.gas_species, self.oxidizer_list))
                 return False
 
+        # Check the mixture of oxidizers
         elif self.oxidizer.gas_species=="mixture":
             oxid_mix = self.oxidizer.mixture_gases['gas_species']
             for oxidizer in oxid_mix:
@@ -101,6 +109,7 @@ class Combustion(object):
                 warnings.warn("Requested gas mixture ({0}) not available. Available oxidizers: {1}".format(oxid_mix, self.oxidizer_list))
                 return False
     
+        # Check fuels
         if not (self.fuel.gas_species in self.fuel_list or self.fuel.gas_species == "mixture"):
             for fuel in self.fuel_list:
                 if fuel in self.fuel.gas_species:
@@ -111,12 +120,13 @@ class Combustion(object):
                 warnings.warn("Requested fuel ({0}) not available. Available fuels: {1}".format(self.fuel.gas_species, self.fuel_list))
                 return False
 
+        # Return with True, all reactants OK.
         return True
 
 
     def _combustion_stoichiometry_simple_reaction(self):
         """
-        Stoichiometric reaction of a combustion with one molecule of fuel and an oxidizer.
+        Stoichiometric reaction of a combustion with one mole of fuel and an oxidizer.
         """
 
         has_carbon = False
@@ -246,7 +256,7 @@ class Combustion(object):
                 products_dictionary['H2O'] = beta/2
 
         #else:        
-            # TODO: Complete with other ozidizers in the future
+            # TODO: Complete with other oxidizers in the future
 
         # Nytrogen present:        
         if delta == 1:
