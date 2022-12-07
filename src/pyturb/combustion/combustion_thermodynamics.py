@@ -10,6 +10,7 @@ MRodriguez 2020
 from pyturb.gas_models.thermo_properties import ThermoProperties
 from pyturb.gas_models.perfect_ideal_gas import PerfectIdealGas
 from pyturb.gas_models.semiperfect_ideal_gas import SemiperfectIdealGas
+from pyturb.gas_models import GasMixture
 from pyturb.utils import units
 import numpy as np
 import warnings
@@ -45,7 +46,8 @@ class Combustion(object):
             raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas or PerfectLiquid. Instead received {}".format(fuel))
 
 
-        if not(isinstance(oxidizer, PerfectIdealGas) or isinstance(fuel, SemiperfectIdealGas) or isinstance(fuel, IdealLiquid)):
+        if not(isinstance(oxidizer, PerfectIdealGas) or isinstance(fuel, SemiperfectIdealGas)
+                or isinstance(oxidizer, GasMixture) or isinstance(fuel, IdealLiquid)):
             # Check the fluid is a Perfect or a Semiperfect gas from pyturb
             raise TypeError("Object must be PerfectIdealGas, SemiperfectIdealGas or PerfectLiquid. Instead received {}".format(oxidizer))
 
@@ -80,15 +82,18 @@ class Combustion(object):
         if not (self.oxidizer.gas_species in self.oxidizer_list or self.oxidizer.gas_species == "mixture"):
             for oxidizer in self.oxidizer_list:
                 if oxidizer in self.oxidizer.gas_species:
-                    return True
+                    break
 
             warnings.warn("Requested oxidizer ({0}) not available. Available oxidizers: {1}".format(self.oxidizer.gas_species, self.oxidizer_list))
             return False
+
+
+                
     
         if not (self.fuel.gas_species in self.fuel_list or self.fuel.gas_species == "mixture"):
             for fuel in self.fuel_list:
                 if fuel in self.fuel.gas_species:
-                    return True
+                    break
 
             warnings.warn("Requested fuel ({0}) not available. Available fuels: {1}".format(self.fuel.gas_species, self.fuel_list))
             return False
