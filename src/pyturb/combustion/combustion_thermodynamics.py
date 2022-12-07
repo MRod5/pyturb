@@ -79,30 +79,37 @@ class Combustion(object):
         Check fuel and oxidizer species.
         """
 
+        reactants_check = False
         if not (self.oxidizer.gas_species in self.oxidizer_list or self.oxidizer.gas_species == "mixture"):
             for oxidizer in self.oxidizer_list:
                 if oxidizer in self.oxidizer.gas_species:
+                    reactants_check = True
                     break
 
-            warnings.warn("Requested oxidizer ({0}) not available. Available oxidizers: {1}".format(self.oxidizer.gas_species, self.oxidizer_list))
-            return False
+            if not reactants_check:
+                warnings.warn("Requested oxidizer ({0}) not available. Available oxidizers: {1}".format(self.oxidizer.gas_species, self.oxidizer_list))
+                return False
 
         elif self.oxidizer.gas_species=="mixture":
             oxid_mix = self.oxidizer.mixture_gases['gas_species']
             for oxidizer in oxid_mix:
                 if oxidizer in self.oxidizer_list:
+                    reactants_check = True
                     break
             
-            warnings.warn("Requested gas mixture ({0}) not available. Available oxidizers: {1}".format(oxid_mix, self.oxidizer_list))
-            return False
+            if not reactants_check:
+                warnings.warn("Requested gas mixture ({0}) not available. Available oxidizers: {1}".format(oxid_mix, self.oxidizer_list))
+                return False
     
         if not (self.fuel.gas_species in self.fuel_list or self.fuel.gas_species == "mixture"):
             for fuel in self.fuel_list:
                 if fuel in self.fuel.gas_species:
+                    reactants_check = True
                     break
 
-            warnings.warn("Requested fuel ({0}) not available. Available fuels: {1}".format(self.fuel.gas_species, self.fuel_list))
-            return False
+            if not reactants_check:
+                warnings.warn("Requested fuel ({0}) not available. Available fuels: {1}".format(self.fuel.gas_species, self.fuel_list))
+                return False
 
         return True
 
