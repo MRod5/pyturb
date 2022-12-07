@@ -21,6 +21,7 @@ fuels = ['hydrocarbon',
          'CH4', 'C2H6', 'C3H8', 'C4H10', 'C5H12', 'C6H14', 'C7H16', 'C8H18',
          'C9H19', 'C10H8',
          'CH4O', 'CH3OCH3',
+         'C2H2',
          'H2']
 
 inert_gases = ['He', 'Ar', 'N2',
