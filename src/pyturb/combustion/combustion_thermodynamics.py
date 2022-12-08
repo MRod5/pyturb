@@ -511,6 +511,14 @@ class Combustion(object):
         """
         return self._stoich_far
 
+
+    @property
+    def stoich_for(self):
+        """
+        Stoichiometric fuel-oxygen ratio (when air is not the oxidizer).
+        """
+        return self._stoich_for
+
     
     @property
     def LHV(self):
