@@ -247,6 +247,7 @@ class Combustion(object):
                         d = self.oxidizer.mixture_gases.loc[ii]['Ng'] * self._oxidizer_fuel_ratio
                         inerts += " + {0:1.3f}{1}".format(d, gases)
                         reactants += inerts
+                        reactants_dictionary[gases] = d
 
 
         ## Products:
@@ -294,15 +295,20 @@ class Combustion(object):
         self._delta = delta if delta == 1 else self._delta
 
 
-        # TODO: Must be an independent function, otherwise the FAR of a full reaction wont make sense
-        # Fuel/Air ratio:
+        # Stoichiometric Fuel/Air ratio or Fuel/Oxygen ratio:
         if self.oxidizer.gas_species == "Air":
             self._stoich_far = self.fuel.thermo_prop.Mg / (self.oxidizer_fuel_ratio/0.21*self.oxidizer.Mg)
-        
+            self._stoich_for = np.nan
         else:
             # TODO: FAR for non-air oxidizers
             self._stoich_far = np.nan
-
+            self._stoich_for = 0
+            for oxidizer in ['O', 'O2', 'O3']:
+                iOxidizer = self.oxidizer.mixture_gases[self.oxidizer.mixture_gases['gas_species']==oxidizer]
+                if not iOxidizer.empty:
+                    self._stoich_for += (iOxidizer['Mg']*iOxidizer['Ng'])*reactants_dictionary[oxidizer]
+            
+            self._stoich_for = (reactants_dictionary[self.fuel.gas_species]*self.fuel.Mg) / self._stoich_for
 
     def combustion_stoichiometry(self):
         """
