@@ -4,7 +4,7 @@ combustion_thermodynamics:
 
 Combustion reaction thermodynamical properties.
 
-MRodriguez 2020
+MRodriguez 2020-2022
 
 """
 from pyturb.gas_models import ThermoProperties
@@ -38,7 +38,7 @@ class Combustion(object):
 
     Calculates the combustion between fuel and oxidizer.
 
-    MRodriguez. 2020
+    MRodriguez. 2020-2022
 
     """
 
@@ -210,7 +210,7 @@ class Combustion(object):
                 a = b = c = d = 0 # Oxygen coefficient
                 delta = 0
                 for ii, gases in enumerate(self.oxidizer.mixture_gases['gas_species']):
-                    if gases == "O":
+                    if gases == "O": 
                         has_oxygen = True
                         a = self.oxidizer.mixture_gases.loc[ii]['Ng'] # Monoatomic oxygen
 
@@ -297,18 +297,25 @@ class Combustion(object):
 
         # Stoichiometric Fuel/Air ratio or Fuel/Oxygen ratio:
         if self.oxidizer.gas_species == "Air":
+            # FAR Ratio
             self._stoich_far = self.fuel.thermo_prop.Mg / (self.oxidizer_fuel_ratio/0.21*self.oxidizer.Mg)
-            self._stoich_for = np.nan
+            self._stoich_for = np.nan # TODO: check if Fuel-oxygen ratio is necessary
         else:
-            # TODO: FAR for non-air oxidizers
+            # FAR for non-air oxidizers is nan
             self._stoich_far = np.nan
+
+            # Fuel-Oxygen ratio for mixtures:
             self._stoich_for = 0
-            for oxidizer in ['O', 'O2', 'O3']:
+
+            for oxidizer in ['O', 'O2', 'O3']: # TODO: Unify this list with self.oxidizers
                 iOxidizer = self.oxidizer.mixture_gases[self.oxidizer.mixture_gases['gas_species']==oxidizer]
                 if not iOxidizer.empty:
                     self._stoich_for += (iOxidizer['Mg']*iOxidizer['Ng'])*reactants_dictionary[oxidizer]
             
             self._stoich_for = (reactants_dictionary[self.fuel.gas_species]*self.fuel.Mg) / self._stoich_for
+
+        return None
+
 
     def combustion_stoichiometry(self):
         """
