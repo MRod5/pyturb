@@ -139,10 +139,10 @@ class Combustion(object):
         products_dictionary = {}
         reactants_dictionary = {}
 
-        alpha = 0
-        beta = 0
-        gamma = 0
-        delta = 0
+        alpha = 0 # Carbons
+        beta = 0  # Hydrogens
+        gamma = 0 # Oxygens
+        delta = 0 # Inerts
        
 
         # TODO: Fuel mixtures will need a rework of alpha, beta, gamma coefficients
@@ -225,6 +225,7 @@ class Combustion(object):
                     reactants += " + {0:1.3f} O".format(a*self.oxidizer_fuel_ratio)
                     reactants_dictionary["O"] = a*self.oxidizer_fuel_ratio
                 if b!=0:
+                    reactants += " + {0:1.3f} O2".format(b*self.oxidizer_fuel_ratio)
                     reactants_dictionary["O2"] = b*self.oxidizer_fuel_ratio
                 if c!=0:
                     reactants += " + {0:1.3f} O3".format(c*self.oxidizer_fuel_ratio)
