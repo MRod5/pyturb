@@ -142,12 +142,12 @@ class Combustion(object):
         alpha = 0 # Carbons
         beta = 0  # Hydrogens
         gamma = 0 # Oxygens
-        delta = 0 # Inerts
+        delta = 0 # Inerts//Nytrogen
        
 
         # TODO: Fuel mixtures will need a rework of alpha, beta, gamma coefficients
 
-        # Reactants:
+        ## Reactants:
         # Stoichiometric combustion are calculated per unit mole of fuel. Quantity is adjusted afterwards.
         reactants_dictionary[self.fuel.gas_species] = 1
 
@@ -172,16 +172,17 @@ class Combustion(object):
         # Oxidizer to fuel ratio depending on C, H, O atoms, assuming O2 as oxidizer
         self._oxidizer_fuel_ratio = alpha + beta/4 - gamma/2
 
-        # TODO: Rework products. Mixtures must be accepted...
         # Oxidizer
         if self.oxidizer.gas_species == "Air":
-            delta = 1
+            # Air case, 21%O2 + 79%N2 (inert)
+            delta = 1 #Has inert gas
             has_oxygen = True
             reactants += " + {0:1.3f}(O2 + 79/21 N2)".format(self.oxidizer_fuel_ratio)
             reactants_dictionary["Air"] = self.oxidizer_fuel_ratio
 
         elif self.oxidizer.gas_species == "O2" or self.oxidizer.gas_species == "O2(L)":
-            delta = 0
+            delta = 0 # Oxicombustion
+
             for element in self.oxidizer.thermo_prop.chemical_formula:
                 if element == "O":
                     has_oxygen = True
@@ -189,14 +190,16 @@ class Combustion(object):
                     reactants_dictionary["Air"] = self.oxidizer_fuel_ratio
 
         elif self.oxidizer.gas_species == "O3" or self.oxidizer.gas_species == "O3(L)":
-            self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2/3
+            delta = 0 # Oxicombustion with ozone
+            self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2/3 # O3 instead of O2
             if element == "O":
                 has_oxygen = True
                 reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
             reactants_dictionary["O3"] = self.oxidizer_fuel_ratio
 
         elif self.oxidizer.gas_species == "O":
-            self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2
+            delta = 0
+            self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2 # Monoatomic oxygen
             if element == "O":
                 has_oxygen = True
                 reactants += " + {0:1.3f} O{1:1.0f}".format(self.oxidizer_fuel_ratio, self.oxidizer.thermo_prop.chemical_formula[element])
@@ -204,34 +207,40 @@ class Combustion(object):
 
         else:
             if self.oxidizer.gas_species == "mixture":
-                a = b = c = d = 0
+                a = b = c = d = 0 # Oxygen coefficient
                 delta = 0
                 for ii, gases in enumerate(self.oxidizer.mixture_gases['gas_species']):
                     if gases == "O":
                         has_oxygen = True
-                        a = self.oxidizer.mixture_gases.loc[ii]['Ng']
+                        a = self.oxidizer.mixture_gases.loc[ii]['Ng'] # Monoatomic oxygen
 
                     elif gases == "O2":
                         has_oxygen = True
-                        b = self.oxidizer.mixture_gases.loc[ii]['Ng']
+                        b = self.oxidizer.mixture_gases.loc[ii]['Ng'] # Diatomic oxygen
 
                     elif gases == "O3":
                         has_oxygen = True
-                        c = self.oxidizer.mixture_gases.loc[ii]['Ng']
+                        c = self.oxidizer.mixture_gases.loc[ii]['Ng'] # Ozone
 
 
-                self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2 / (a + b*2 + c*3)
+                self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2 / (a + b*2 + c*3) # OFR is calculated per diatomic oxygen molecule
+                
                 if a!=0:
+                    # O in mixture
                     reactants += " + {0:1.3f} O".format(a*self.oxidizer_fuel_ratio)
                     reactants_dictionary["O"] = a*self.oxidizer_fuel_ratio
+
                 if b!=0:
+                    # O2 in mixture
                     reactants += " + {0:1.3f} O2".format(b*self.oxidizer_fuel_ratio)
                     reactants_dictionary["O2"] = b*self.oxidizer_fuel_ratio
+
                 if c!=0:
+                    # O3 in mixture
                     reactants += " + {0:1.3f} O3".format(c*self.oxidizer_fuel_ratio)
                     reactants_dictionary["O3"] = c*self.oxidizer_fuel_ratio
 
-
+                # Non-oxidizer gases in the mixture
                 for ii, gases in enumerate(self.oxidizer.mixture_gases['gas_species']):
                     if gases in inert_gases:
                         delta = 1
@@ -240,24 +249,26 @@ class Combustion(object):
                         reactants += inerts
 
 
-        # Products:
+        ## Products:
         if has_oxygen:
-            # Hydrocarbon and hydorgen case:
             if has_carbon and not has_hydrogen: 
+                # Carbon based fuel (non-hydrocarbon))
                 products += "{0:1.3f}CO2".format(alpha)
                 products_dictionary['CO2'] = alpha
 
             elif not has_carbon and has_hydrogen:
+                # Hydrogen:
                 products += "{0:1.3f}H2O".format(beta/2)
                 products_dictionary['H2O'] = beta/2
             
             elif has_carbon and has_hydrogen:
+                # Hydrocarbon case:
                 products += "{0:1.3f}CO2 + {1:1.3f}H2O".format(alpha, beta/2)
                 products_dictionary['CO2'] = alpha
                 products_dictionary['H2O'] = beta/2
 
         #else:        
-            # TODO: Complete with other oxidizers in the future
+            # TODO: Complete with other fuels and oxidizers in the future
 
         # Nytrogen present:        
         if delta == 1:
@@ -289,6 +300,7 @@ class Combustion(object):
             self._stoich_far = self.fuel.thermo_prop.Mg / (self.oxidizer_fuel_ratio/0.21*self.oxidizer.Mg)
         
         else:
+            # TODO: FAR for non-air oxidizers
             self._stoich_far = np.nan
 
 
