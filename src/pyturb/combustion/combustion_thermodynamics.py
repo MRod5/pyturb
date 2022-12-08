@@ -220,7 +220,7 @@ class Combustion(object):
                         c = self.oxidizer.mixture_gases.loc[ii]['Ng']
 
 
-                self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2 / (a + 2*b + 3*c)
+                self._oxidizer_fuel_ratio = self.oxidizer_fuel_ratio * 2 / (a + b*2 + c*3)
                 if a!=0:
                     reactants += " + {0:1.3f} O".format(a*self.oxidizer_fuel_ratio)
                     reactants_dictionary["O"] = a*self.oxidizer_fuel_ratio
@@ -236,7 +236,7 @@ class Combustion(object):
                     if gases in inert_gases:
                         delta = 1
                         d = self.oxidizer.mixture_gases.loc[ii]['Ng'] * self._oxidizer_fuel_ratio
-                        inerts += " + {0:1.0f}{1}".format(d, gases)
+                        inerts += " + {0:1.3f}{1}".format(d, gases)
                         reactants += inerts
 
 
@@ -244,15 +244,15 @@ class Combustion(object):
         if has_oxygen:
             # Hydrocarbon and hydorgen case:
             if has_carbon and not has_hydrogen: 
-                products += "{0:1.0f}CO2".format(alpha)
+                products += "{0:1.3f}CO2".format(alpha)
                 products_dictionary['CO2'] = alpha
 
             elif not has_carbon and has_hydrogen:
-                products += "{0:1.0f}H2O".format(beta/2)
+                products += "{0:1.3f}H2O".format(beta/2)
                 products_dictionary['H2O'] = beta/2
             
             elif has_carbon and has_hydrogen:
-                products += "{0:1.0f}CO2 + {1:1.0f}H2O".format(alpha, beta/2)
+                products += "{0:1.3f}CO2 + {1:1.3f}H2O".format(alpha, beta/2)
                 products_dictionary['CO2'] = alpha
                 products_dictionary['H2O'] = beta/2
 
